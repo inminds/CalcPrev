@@ -16,6 +16,9 @@ import {
   Trash2,
   Calculator,
   ChevronLeft,
+  Webhook,
+  Mail,
+  Link2,
 } from "lucide-react";
 import {
   Form,
@@ -30,6 +33,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -51,7 +57,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { formatCurrency, formatDate, formatPercentage } from "@/lib/formatters";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { CalculationParams, Fpas, Lead, Simulation } from "@shared/schema";
+import type { CalculationParams, Fpas, Lead, EmailSettings, WebhookSettings, AppSettings } from "@shared/schema";
 
 const paramsSchema = z.object({
   salarioMinimo: z.string().min(1, "Obrigatório"),
@@ -68,8 +74,30 @@ const fpasSchema = z.object({
   aliquotaTerceiros: z.string().min(1, "Alíquota é obrigatória"),
 });
 
+const emailSettingsSchema = z.object({
+  enabled: z.boolean(),
+  fromEmail: z.string().email("E-mail inválido"),
+  fromName: z.string().min(1, "Nome é obrigatório"),
+  subject: z.string().min(1, "Assunto é obrigatório"),
+  bodyTemplate: z.string().min(1, "Template é obrigatório"),
+});
+
+const webhookSettingsSchema = z.object({
+  enabled: z.boolean(),
+  url: z.string().url("URL inválida").or(z.string().length(0)),
+  headers: z.string(),
+  retryCount: z.string(),
+});
+
+const appSettingsSchema = z.object({
+  privacyPolicyUrl: z.string().url("URL inválida"),
+});
+
 type ParamsFormData = z.infer<typeof paramsSchema>;
 type FpasFormData = z.infer<typeof fpasSchema>;
+type EmailSettingsFormData = z.infer<typeof emailSettingsSchema>;
+type WebhookSettingsFormData = z.infer<typeof webhookSettingsSchema>;
+type AppSettingsFormData = z.infer<typeof appSettingsSchema>;
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -114,6 +142,36 @@ export default function AdminDashboard() {
     enabled: !!token,
   });
 
+  const { data: emailSettings, isLoading: emailSettingsLoading } = useQuery<EmailSettings>({
+    queryKey: ["/api/admin/email-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/email-settings", { headers: authHeaders });
+      if (!res.ok) throw new Error("Failed to fetch email settings");
+      return res.json();
+    },
+    enabled: !!token,
+  });
+
+  const { data: webhookSettings, isLoading: webhookSettingsLoading } = useQuery<WebhookSettings>({
+    queryKey: ["/api/admin/webhook-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/webhook-settings", { headers: authHeaders });
+      if (!res.ok) throw new Error("Failed to fetch webhook settings");
+      return res.json();
+    },
+    enabled: !!token,
+  });
+
+  const { data: appSettings, isLoading: appSettingsLoading } = useQuery<AppSettings>({
+    queryKey: ["/api/admin/app-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/app-settings", { headers: authHeaders });
+      if (!res.ok) throw new Error("Failed to fetch app settings");
+      return res.json();
+    },
+    enabled: !!token,
+  });
+
   const paramsForm = useForm<ParamsFormData>({
     resolver: zodResolver(paramsSchema),
     defaultValues: {
@@ -135,6 +193,34 @@ export default function AdminDashboard() {
     },
   });
 
+  const emailSettingsForm = useForm<EmailSettingsFormData>({
+    resolver: zodResolver(emailSettingsSchema),
+    defaultValues: {
+      enabled: false,
+      fromEmail: "",
+      fromName: "",
+      subject: "",
+      bodyTemplate: "",
+    },
+  });
+
+  const webhookSettingsForm = useForm<WebhookSettingsFormData>({
+    resolver: zodResolver(webhookSettingsSchema),
+    defaultValues: {
+      enabled: false,
+      url: "",
+      headers: "{}",
+      retryCount: "3",
+    },
+  });
+
+  const appSettingsForm = useForm<AppSettingsFormData>({
+    resolver: zodResolver(appSettingsSchema),
+    defaultValues: {
+      privacyPolicyUrl: "https://msh.adv.br/politica-de-privacidade/",
+    },
+  });
+
   useEffect(() => {
     if (params) {
       paramsForm.reset({
@@ -147,6 +233,37 @@ export default function AdminDashboard() {
       });
     }
   }, [params, paramsForm]);
+
+  useEffect(() => {
+    if (emailSettings) {
+      emailSettingsForm.reset({
+        enabled: emailSettings.enabled,
+        fromEmail: emailSettings.fromEmail,
+        fromName: emailSettings.fromName,
+        subject: emailSettings.subject,
+        bodyTemplate: emailSettings.bodyTemplate,
+      });
+    }
+  }, [emailSettings, emailSettingsForm]);
+
+  useEffect(() => {
+    if (webhookSettings) {
+      webhookSettingsForm.reset({
+        enabled: webhookSettings.enabled,
+        url: webhookSettings.url || "",
+        headers: webhookSettings.headers || "{}",
+        retryCount: webhookSettings.retryCount?.toString() || "3",
+      });
+    }
+  }, [webhookSettings, webhookSettingsForm]);
+
+  useEffect(() => {
+    if (appSettings) {
+      appSettingsForm.reset({
+        privacyPolicyUrl: appSettings.privacyPolicyUrl || "https://msh.adv.br/politica-de-privacidade/",
+      });
+    }
+  }, [appSettings, appSettingsForm]);
 
   const updateParamsMutation = useMutation({
     mutationFn: async (data: ParamsFormData) => {
@@ -245,6 +362,67 @@ export default function AdminDashboard() {
     },
   });
 
+  const updateEmailSettingsMutation = useMutation({
+    mutationFn: async (data: EmailSettingsFormData) => {
+      const res = await fetch("/api/admin/email-settings", {
+        method: "PUT",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update email settings");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Configurações de e-mail atualizadas com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-settings"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar configurações de e-mail", variant: "destructive" });
+    },
+  });
+
+  const updateWebhookSettingsMutation = useMutation({
+    mutationFn: async (data: WebhookSettingsFormData) => {
+      const payload = {
+        ...data,
+        retryCount: parseInt(data.retryCount) || 3,
+      };
+      const res = await fetch("/api/admin/webhook-settings", {
+        method: "PUT",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update webhook settings");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Configurações de webhook atualizadas com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/webhook-settings"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar configurações de webhook", variant: "destructive" });
+    },
+  });
+
+  const updateAppSettingsMutation = useMutation({
+    mutationFn: async (data: AppSettingsFormData) => {
+      const res = await fetch("/api/admin/app-settings", {
+        method: "PUT",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update app settings");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Configurações do app atualizadas com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/app-settings"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar configurações do app", variant: "destructive" });
+    },
+  });
+
   const handleLogout = () => {
     sessionStorage.removeItem("adminToken");
     setLocation("/admin");
@@ -327,7 +505,7 @@ export default function AdminDashboard() {
       {/* Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="params" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="params" data-testid="tab-params">
               <Calculator className="h-4 w-4 mr-2" />
               Parâmetros
@@ -339,6 +517,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="leads" data-testid="tab-leads">
               <Users className="h-4 w-4 mr-2" />
               Leads
+            </TabsTrigger>
+            <TabsTrigger value="integrations" data-testid="tab-integrations">
+              <Webhook className="h-4 w-4 mr-2" />
+              Integrações
             </TabsTrigger>
           </TabsList>
 
@@ -742,6 +924,368 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Integrações Tab */}
+          <TabsContent value="integrations">
+            <div className="space-y-6">
+              {/* Email Settings */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-primary" />
+                    <CardTitle>Envio de E-mail</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Configure o envio automático de e-mail com PDF anexo após cada simulação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {emailSettingsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <Form {...emailSettingsForm}>
+                      <form
+                        onSubmit={emailSettingsForm.handleSubmit((data) =>
+                          updateEmailSettingsMutation.mutate(data)
+                        )}
+                        className="space-y-4"
+                      >
+                        <FormField
+                          control={emailSettingsForm.control}
+                          name="enabled"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Envio Automático de E-mail
+                                </FormLabel>
+                                <FormDescription>
+                                  Enviar diagnóstico PDF automaticamente após simulação
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  data-testid="switch-email-enabled"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={emailSettingsForm.control}
+                            name="fromName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nome do Remetente</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Machado Schütz Advogados"
+                                    data-testid="input-email-from-name"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={emailSettingsForm.control}
+                            name="fromEmail"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>E-mail do Remetente</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="email"
+                                    placeholder="noreply@msh.adv.br"
+                                    data-testid="input-email-from"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={emailSettingsForm.control}
+                          name="subject"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Assunto do E-mail</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Seu Diagnóstico Previdenciário"
+                                  data-testid="input-email-subject"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={emailSettingsForm.control}
+                          name="bodyTemplate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Template do E-mail</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  rows={5}
+                                  placeholder="Use {{name}} para inserir o nome do lead"
+                                  data-testid="input-email-body"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Use {"{{name}}"} para incluir o nome do contato no texto
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          disabled={updateEmailSettingsMutation.isPending}
+                          data-testid="button-save-email-settings"
+                        >
+                          {updateEmailSettingsMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Salvar E-mail
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Webhook Settings */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Webhook className="h-5 w-5 text-primary" />
+                    <CardTitle>Webhook de Leads</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Configure o envio de leads para sistemas externos (CRM, automações)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {webhookSettingsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <Form {...webhookSettingsForm}>
+                      <form
+                        onSubmit={webhookSettingsForm.handleSubmit((data) =>
+                          updateWebhookSettingsMutation.mutate(data)
+                        )}
+                        className="space-y-4"
+                      >
+                        <FormField
+                          control={webhookSettingsForm.control}
+                          name="enabled"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Webhook Ativo
+                                </FormLabel>
+                                <FormDescription>
+                                  Enviar dados do lead para URL externa
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  data-testid="switch-webhook-enabled"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={webhookSettingsForm.control}
+                          name="url"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>URL do Webhook</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="url"
+                                  placeholder="https://api.exemplo.com/webhook"
+                                  data-testid="input-webhook-url"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Receberá POST com dados do lead e simulação
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={webhookSettingsForm.control}
+                          name="headers"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Headers (JSON)</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  rows={3}
+                                  placeholder='{"Authorization": "Bearer seu-token", "X-API-Key": "chave"}'
+                                  data-testid="input-webhook-headers"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Headers customizados em formato JSON
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={webhookSettingsForm.control}
+                          name="retryCount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tentativas de Reenvio</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="0"
+                                  max="5"
+                                  data-testid="input-webhook-retries"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Número de tentativas em caso de falha (máx: 5)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          disabled={updateWebhookSettingsMutation.isPending}
+                          data-testid="button-save-webhook-settings"
+                        >
+                          {updateWebhookSettingsMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Salvar Webhook
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* App Settings - Privacy Policy */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-5 w-5 text-primary" />
+                    <CardTitle>Configurações LGPD</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Configure a URL da política de privacidade exibida no formulário
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {appSettingsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <Form {...appSettingsForm}>
+                      <form
+                        onSubmit={appSettingsForm.handleSubmit((data) =>
+                          updateAppSettingsMutation.mutate(data)
+                        )}
+                        className="space-y-4"
+                      >
+                        <FormField
+                          control={appSettingsForm.control}
+                          name="privacyPolicyUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>URL da Política de Privacidade</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="url"
+                                  placeholder="https://msh.adv.br/politica-de-privacidade/"
+                                  data-testid="input-privacy-policy-url"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Link exibido no checkbox LGPD do formulário público
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          disabled={updateAppSettingsMutation.isPending}
+                          data-testid="button-save-app-settings"
+                        >
+                          {updateAppSettingsMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Salvar LGPD
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
