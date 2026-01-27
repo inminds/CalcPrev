@@ -1,16 +1,319 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { calculatePrevidenciario } from "./calculation";
+import { generatePDF } from "./pdf-generator";
+import { calculatorFormSchema, insertCalculationParamsSchema, insertFpasSchema } from "@shared/schema";
+import { randomBytes } from "crypto";
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+
+const activeTokens = new Map<string, { createdAt: number }>();
+const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
+function generateSecureToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+function cleanupExpiredTokens() {
+  const now = Date.now();
+  for (const [token, data] of activeTokens.entries()) {
+    if (now - data.createdAt > TOKEN_EXPIRY_MS) {
+      activeTokens.delete(token);
+    }
+  }
+}
+
+function adminAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  
+  const token = authHeader.substring(7);
+  const tokenData = activeTokens.get(token);
+  
+  if (!tokenData) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+  
+  if (Date.now() - tokenData.createdAt > TOKEN_EXPIRY_MS) {
+    activeTokens.delete(token);
+    return res.status(401).json({ error: "Token expired" });
+  }
+  
+  next();
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  
+  app.get("/api/fpas", async (req, res) => {
+    try {
+      const fpasList = await storage.getAllFpas();
+      res.json(fpasList);
+    } catch (error) {
+      console.error("Error fetching FPAS:", error);
+      res.status(500).json({ error: "Failed to fetch FPAS" });
+    }
+  });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  app.get("/api/cnpj/:cnpj", async (req, res) => {
+    try {
+      const { cnpj } = req.params;
+      const cleanCnpj = cnpj.replace(/\D/g, "");
+
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+      if (!response.ok) {
+        return res.status(404).json({ error: "CNPJ not found" });
+      }
+
+      const data = await response.json();
+      res.json({
+        razaoSocial: data.razao_social || "",
+        segmento: data.cnae_fiscal_descricao || "",
+        fpasCode: "",
+      });
+    } catch (error) {
+      console.error("Error fetching CNPJ:", error);
+      res.status(500).json({ error: "Failed to fetch CNPJ" });
+    }
+  });
+
+  app.post("/api/simulate", async (req, res) => {
+    try {
+      const validation = calculatorFormSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+
+      const data = validation.data;
+
+      let params = await storage.getCalculationParams();
+      if (!params) {
+        params = await storage.upsertCalculationParams({
+          salarioMinimo: "1412.00",
+          percentualCredito: "0.20",
+          percentualVerde: "0.15",
+          percentualAmarelo: "0.35",
+          percentualVermelho: "0.50",
+          mesesProjecao: 65,
+        });
+      }
+
+      const fpasData = await storage.getFpasByCode(data.fpasCode);
+      if (!fpasData) {
+        return res.status(400).json({ error: "FPAS code not found" });
+      }
+
+      const calculationResult = calculatePrevidenciario({
+        colaboradores: data.colaboradores,
+        isDesonerada: data.isDesonerada,
+        fpas: fpasData,
+        params: params,
+      });
+
+      let lead = await storage.getLeadByEmail(data.email);
+      if (!lead) {
+        lead = await storage.createLead({
+          name: data.name,
+          email: data.email,
+          phone: data.phone || null,
+        });
+      }
+
+      const companySnapshot = await storage.createCompanySnapshot({
+        cnpj: data.cnpj,
+        razaoSocial: data.razaoSocial,
+        segmento: data.segmento,
+        fpasCode: data.fpasCode,
+        isDesonerada: data.isDesonerada,
+        colaboradores: data.colaboradores,
+      });
+
+      const simulation = await storage.createSimulation({
+        leadId: lead.id,
+        companySnapshotId: companySnapshot.id,
+        salarioMinimo: params.salarioMinimo,
+        aliquotaFpas: calculationResult.aliquotaFpas,
+        aliquotaRat: calculationResult.aliquotaRat,
+        mesesProjetados: calculationResult.mesesProjetados,
+        baseFolha: calculationResult.baseFolha,
+        impostoMensalEstimado: calculationResult.impostoMensalEstimado,
+        totalProjetado: calculationResult.totalProjetado,
+        creditoEstimadoTotal: calculationResult.creditoEstimadoTotal,
+        creditoVerde: calculationResult.creditoVerde,
+        creditoAmarelo: calculationResult.creditoAmarelo,
+        creditoVermelho: calculationResult.creditoVermelho,
+      });
+
+      res.json({
+        simulation,
+        companySnapshot,
+        lead,
+      });
+    } catch (error) {
+      console.error("Error creating simulation:", error);
+      res.status(500).json({ error: "Failed to create simulation" });
+    }
+  });
+
+  app.get("/api/simulations/:id/pdf", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await storage.getSimulationsWithDetails(id);
+
+      if (!result) {
+        return res.status(404).json({ error: "Simulation not found" });
+      }
+
+      let params = await storage.getCalculationParams();
+      if (!params) {
+        return res.status(500).json({ error: "Calculation params not found" });
+      }
+
+      const pdfBuffer = await generatePDF(
+        result.simulation,
+        result.companySnapshot,
+        result.lead,
+        params
+      );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="diagnostico-${result.companySnapshot.cnpj}.pdf"`
+      );
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ error: "Failed to generate PDF" });
+    }
+  });
+
+  app.post("/api/admin/login", (req, res) => {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+      cleanupExpiredTokens();
+      const token = generateSecureToken();
+      activeTokens.set(token, { createdAt: Date.now() });
+      res.json({ token, success: true });
+    } else {
+      res.status(401).json({ error: "Invalid password" });
+    }
+  });
+
+  app.get("/api/admin/params", adminAuth, async (req, res) => {
+    try {
+      let params = await storage.getCalculationParams();
+      if (!params) {
+        params = await storage.upsertCalculationParams({
+          salarioMinimo: "1412.00",
+          percentualCredito: "0.20",
+          percentualVerde: "0.15",
+          percentualAmarelo: "0.35",
+          percentualVermelho: "0.50",
+          mesesProjecao: 65,
+        });
+      }
+      res.json(params);
+    } catch (error) {
+      console.error("Error fetching params:", error);
+      res.status(500).json({ error: "Failed to fetch params" });
+    }
+  });
+
+  app.put("/api/admin/params", adminAuth, async (req, res) => {
+    try {
+      const validation = insertCalculationParamsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const params = await storage.upsertCalculationParams(validation.data);
+      res.json(params);
+    } catch (error) {
+      console.error("Error updating params:", error);
+      res.status(500).json({ error: "Failed to update params" });
+    }
+  });
+
+  app.get("/api/admin/leads", adminAuth, async (req, res) => {
+    try {
+      const leads = await storage.getAllLeads();
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  app.get("/api/admin/leads/export", adminAuth, async (req, res) => {
+    try {
+      const leads = await storage.getAllLeads();
+      
+      const csv = [
+        ["Nome", "Email", "Telefone", "Simulações", "Data de Cadastro"].join(","),
+        ...leads.map((lead) =>
+          [
+            `"${lead.name}"`,
+            `"${lead.email}"`,
+            `"${lead.phone || ""}"`,
+            lead.simulationsCount,
+            `"${new Date(lead.createdAt).toLocaleDateString("pt-BR")}"`,
+          ].join(",")
+        ),
+      ].join("\n");
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=leads.csv");
+      res.send(csv);
+    } catch (error) {
+      console.error("Error exporting leads:", error);
+      res.status(500).json({ error: "Failed to export leads" });
+    }
+  });
+
+  app.post("/api/admin/fpas", adminAuth, async (req, res) => {
+    try {
+      const validation = insertFpasSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const fpasData = await storage.createFpas(validation.data);
+      res.json(fpasData);
+    } catch (error) {
+      console.error("Error creating FPAS:", error);
+      res.status(500).json({ error: "Failed to create FPAS" });
+    }
+  });
+
+  app.put("/api/admin/fpas/:id", adminAuth, async (req, res) => {
+    try {
+      const validation = insertFpasSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const { id } = req.params;
+      const fpasData = await storage.updateFpas(id, validation.data);
+      res.json(fpasData);
+    } catch (error) {
+      console.error("Error updating FPAS:", error);
+      res.status(500).json({ error: "Failed to update FPAS" });
+    }
+  });
+
+  app.delete("/api/admin/fpas/:id", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFpas(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting FPAS:", error);
+      res.status(500).json({ error: "Failed to delete FPAS" });
+    }
+  });
 
   return httpServer;
 }

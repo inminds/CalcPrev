@@ -1,38 +1,167 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import {
+  leads,
+  companySnapshots,
+  simulations,
+  calculationParams,
+  fpas,
+  type Lead,
+  type InsertLead,
+  type CompanySnapshot,
+  type InsertCompanySnapshot,
+  type Simulation,
+  type InsertSimulation,
+  type CalculationParams,
+  type InsertCalculationParams,
+  type Fpas,
+  type InsertFpas,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Leads
+  createLead(lead: InsertLead): Promise<Lead>;
+  getLeadByEmail(email: string): Promise<Lead | undefined>;
+  getAllLeads(): Promise<(Lead & { simulationsCount: number })[]>;
+
+  // Company Snapshots
+  createCompanySnapshot(snapshot: InsertCompanySnapshot): Promise<CompanySnapshot>;
+  getCompanySnapshot(id: string): Promise<CompanySnapshot | undefined>;
+
+  // Simulations
+  createSimulation(simulation: InsertSimulation): Promise<Simulation>;
+  getSimulation(id: string): Promise<Simulation | undefined>;
+  getSimulationsWithDetails(id: string): Promise<{ simulation: Simulation; companySnapshot: CompanySnapshot; lead: Lead } | undefined>;
+
+  // Calculation Params
+  getCalculationParams(): Promise<CalculationParams | undefined>;
+  upsertCalculationParams(params: InsertCalculationParams): Promise<CalculationParams>;
+
+  // FPAS
+  getAllFpas(): Promise<Fpas[]>;
+  getFpasByCode(code: string): Promise<Fpas | undefined>;
+  createFpas(fpas: InsertFpas): Promise<Fpas>;
+  updateFpas(id: string, fpas: Partial<InsertFpas>): Promise<Fpas>;
+  deleteFpas(id: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  // Leads
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [created] = await db.insert(leads).values(lead).returning();
+    return created;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getLeadByEmail(email: string): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.email, email));
+    return lead || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getAllLeads(): Promise<(Lead & { simulationsCount: number })[]> {
+    const result = await db
+      .select({
+        id: leads.id,
+        name: leads.name,
+        email: leads.email,
+        phone: leads.phone,
+        createdAt: leads.createdAt,
+        simulationsCount: sql<number>`count(${simulations.id})::int`,
+      })
+      .from(leads)
+      .leftJoin(simulations, eq(leads.id, simulations.leadId))
+      .groupBy(leads.id)
+      .orderBy(desc(leads.createdAt));
+    return result;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  // Company Snapshots
+  async createCompanySnapshot(snapshot: InsertCompanySnapshot): Promise<CompanySnapshot> {
+    const [created] = await db.insert(companySnapshots).values(snapshot).returning();
+    return created;
+  }
+
+  async getCompanySnapshot(id: string): Promise<CompanySnapshot | undefined> {
+    const [snapshot] = await db.select().from(companySnapshots).where(eq(companySnapshots.id, id));
+    return snapshot || undefined;
+  }
+
+  // Simulations
+  async createSimulation(simulation: InsertSimulation): Promise<Simulation> {
+    const [created] = await db.insert(simulations).values(simulation).returning();
+    return created;
+  }
+
+  async getSimulation(id: string): Promise<Simulation | undefined> {
+    const [simulation] = await db.select().from(simulations).where(eq(simulations.id, id));
+    return simulation || undefined;
+  }
+
+  async getSimulationsWithDetails(id: string): Promise<{ simulation: Simulation; companySnapshot: CompanySnapshot; lead: Lead } | undefined> {
+    const result = await db
+      .select()
+      .from(simulations)
+      .innerJoin(companySnapshots, eq(simulations.companySnapshotId, companySnapshots.id))
+      .innerJoin(leads, eq(simulations.leadId, leads.id))
+      .where(eq(simulations.id, id));
+
+    if (result.length === 0) return undefined;
+
+    const row = result[0];
+    return {
+      simulation: row.simulations,
+      companySnapshot: row.company_snapshots,
+      lead: row.leads,
+    };
+  }
+
+  // Calculation Params
+  async getCalculationParams(): Promise<CalculationParams | undefined> {
+    const [params] = await db.select().from(calculationParams).limit(1);
+    return params || undefined;
+  }
+
+  async upsertCalculationParams(params: InsertCalculationParams): Promise<CalculationParams> {
+    const existing = await this.getCalculationParams();
+    if (existing) {
+      const [updated] = await db
+        .update(calculationParams)
+        .set({ ...params, updatedAt: new Date() })
+        .where(eq(calculationParams.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(calculationParams).values(params).returning();
+      return created;
+    }
+  }
+
+  // FPAS
+  async getAllFpas(): Promise<Fpas[]> {
+    return db.select().from(fpas).orderBy(fpas.code);
+  }
+
+  async getFpasByCode(code: string): Promise<Fpas | undefined> {
+    const [result] = await db.select().from(fpas).where(eq(fpas.code, code));
+    return result || undefined;
+  }
+
+  async createFpas(fpasData: InsertFpas): Promise<Fpas> {
+    const [created] = await db.insert(fpas).values(fpasData).returning();
+    return created;
+  }
+
+  async updateFpas(id: string, fpasData: Partial<InsertFpas>): Promise<Fpas> {
+    const [updated] = await db
+      .update(fpas)
+      .set({ ...fpasData, updatedAt: new Date() })
+      .where(eq(fpas.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFpas(id: string): Promise<void> {
+    await db.delete(fpas).where(eq(fpas.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

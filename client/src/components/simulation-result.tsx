@@ -1,0 +1,203 @@
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { SemaforoDisplay } from "@/components/semaforo-display";
+import { formatCurrency, formatCNPJ } from "@/lib/formatters";
+import { Download, ArrowLeft, Building2, Calculator, TrendingUp } from "lucide-react";
+import type { SimulationResult } from "@shared/schema";
+
+interface SimulationResultProps {
+  result: SimulationResult;
+  onNewSimulation: () => void;
+}
+
+export function SimulationResultDisplay({ result, onNewSimulation }: SimulationResultProps) {
+  const { simulation, companySnapshot } = result;
+
+  const handleDownloadPdf = async () => {
+    try {
+      const response = await fetch(`/api/simulations/${simulation.id}/pdf`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `diagnostico-previdenciario-${companySnapshot.cnpj}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-3xl mx-auto space-y-6">
+      {/* Header Card */}
+      <Card className="shadow-lg border-t-4 border-t-primary">
+        <CardHeader className="text-center pb-4">
+          <div className="flex justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold">
+            Diagnóstico Previdenciário
+          </CardTitle>
+          <CardDescription>
+            Resultado da sua pré-análise de crédito
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Company Info */}
+          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2 text-primary font-medium">
+              <Building2 className="h-4 w-4" />
+              <span>Dados da Empresa</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">CNPJ:</span>
+                <span className="ml-2 font-medium" data-testid="text-cnpj">
+                  {formatCNPJ(companySnapshot.cnpj)}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Razão Social:</span>
+                <span className="ml-2 font-medium" data-testid="text-razao-social">
+                  {companySnapshot.razaoSocial}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Segmento:</span>
+                <span className="ml-2 font-medium" data-testid="text-segmento">
+                  {companySnapshot.segmento}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Colaboradores:</span>
+                <span className="ml-2 font-medium" data-testid="text-colaboradores">
+                  {companySnapshot.colaboradores}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">FPAS:</span>
+                <span className="ml-2 font-medium" data-testid="text-fpas">
+                  {companySnapshot.fpasCode}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Desonerada:</span>
+                <Badge
+                  variant={companySnapshot.isDesonerada ? "default" : "secondary"}
+                  className="ml-2"
+                  data-testid="badge-desonerada"
+                >
+                  {companySnapshot.isDesonerada ? "Sim" : "Não"}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Calculation Summary */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-primary font-medium">
+              <Calculator className="h-4 w-4" />
+              <span>Resumo do Cálculo</span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Base da Folha</div>
+                  <div className="text-xl font-bold" data-testid="value-base-folha">
+                    {formatCurrency(simulation.baseFolha)}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Imposto Mensal Estimado</div>
+                  <div className="text-xl font-bold" data-testid="value-imposto-mensal">
+                    {formatCurrency(simulation.impostoMensalEstimado)}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card">
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Total Projetado ({simulation.mesesProjetados} meses)</div>
+                  <div className="text-xl font-bold" data-testid="value-total-projetado">
+                    {formatCurrency(simulation.totalProjetado)}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-primary text-primary-foreground">
+                <CardContent className="p-4">
+                  <div className="text-sm opacity-90">Crédito Estimado Total</div>
+                  <div className="text-2xl font-bold" data-testid="value-credito-total">
+                    {formatCurrency(simulation.creditoEstimadoTotal)}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Semáforo de Risco */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 font-medium">
+              <span className="text-lg">Distribuição por Nível de Risco</span>
+            </div>
+            <SemaforoDisplay
+              creditoVerde={simulation.creditoVerde}
+              creditoAmarelo={simulation.creditoAmarelo}
+              creditoVermelho={simulation.creditoVermelho}
+              size="lg"
+            />
+          </div>
+
+          {/* Disclaimer */}
+          <div className="bg-muted/50 rounded-lg p-4 text-xs text-muted-foreground border-l-4 border-l-amber-500">
+            <p className="font-medium text-foreground mb-1">Aviso Legal</p>
+            <p>
+              Os valores apresentados são estimativas baseadas nos parâmetros informados e têm
+              caráter meramente ilustrativo. Os cálculos não constituem garantia de
+              recuperação de crédito e estão sujeitos a análise técnica e jurídica
+              detalhada. Para uma avaliação precisa, entre em contato com nossa equipe.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={onNewSimulation}
+              data-testid="button-new-simulation"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Nova Simulação
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleDownloadPdf}
+              data-testid="button-download-pdf"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Baixar PDF do Diagnóstico
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
