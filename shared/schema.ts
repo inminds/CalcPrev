@@ -147,6 +147,16 @@ export const insertWebhookSettingsSchema = createInsertSchema(webhookSettings).o
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  headers: z.string().max(4096, "Headers não pode exceder 4KB").refine((val) => {
+    try {
+      const parsed = JSON.parse(val);
+      return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  }, { message: "Headers deve ser um JSON válido (objeto)" }),
+  retryCount: z.number().min(0).max(10).default(3),
 });
 
 export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({

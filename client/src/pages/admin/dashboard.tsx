@@ -85,8 +85,18 @@ const emailSettingsSchema = z.object({
 const webhookSettingsSchema = z.object({
   enabled: z.boolean(),
   url: z.string().url("URL inválida").or(z.string().length(0)),
-  headers: z.string(),
-  retryCount: z.string(),
+  headers: z.string().refine((val) => {
+    try {
+      const parsed = JSON.parse(val);
+      return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  }, { message: "Headers deve ser um JSON válido (objeto)" }),
+  retryCount: z.string().refine((val) => {
+    const num = parseInt(val);
+    return !isNaN(num) && num >= 0 && num <= 10;
+  }, { message: "Deve ser um número entre 0 e 10" }),
 });
 
 const appSettingsSchema = z.object({

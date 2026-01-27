@@ -453,7 +453,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
               type="submit"
               className="w-full"
               size="lg"
-              disabled={simulationMutation.isPending}
+              disabled={simulationMutation.isPending || !form.watch("lgpdConsent")}
               data-testid="button-submit"
             >
               {simulationMutation.isPending ? (
