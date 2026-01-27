@@ -96,7 +96,44 @@ npm run db:push      # Sincroniza schema com banco de dados
 - `/admin` - Login do backoffice
 - `/admin/dashboard` - Dashboard administrativo
 
+## Identidade Visual - Machado Schütz
+
+### Paleta de Cores
+- **Primária**: #1F5C4A (Verde Institucional) - Header, footer, botões principais
+- **Secundária**: #163F34 (Verde Escuro) - Hover states
+- **Texto Principal**: #1C1C1C (Preto Grafite)
+- **Texto Secundário**: #4F4F4F (Cinza Médio)
+- **Background**: #FFFFFF (Branco)
+- **Cards/Containers**: #F2F2F2 (Cinza Claro)
+- **Separadores**: #E0E0E0
+
+### Aplicação
+- Header e footer com fundo verde institucional e texto branco
+- Ícones e destaques em verde institucional
+- Dark mode com variações do verde para manter identidade
+
+## Consulta de CNPJ
+
+### Fluxo
+1. Usuário digita 14 dígitos do CNPJ
+2. Após 500ms (debounce), consulta automática é disparada
+3. APIs consultadas em ordem: BrasilAPI → ReceitaWS (fallback)
+4. Campos preenchidos automaticamente: Razão Social, Segmento, FPAS
+
+### Mapeamento CNAE → FPAS
+- CNAE 01-03 (Agropecuária) → FPAS 787
+- CNAE 10-33 (Indústria) → FPAS 507
+- CNAE 41-43 (Construção) → FPAS 507
+- CNAE 45-47 (Comércio) → FPAS 515
+- CNAE 49-99 (Serviços) → FPAS 515
+
 ## Changelog
+
+### V1.1 (2026-01-27)
+- Identidade visual Machado Schütz aplicada (paleta de cores verde institucional)
+- Consulta de CNPJ com debounce e fallback de APIs
+- Mapeamento automático CNAE → FPAS
+- Dark mode com identidade visual preservada
 
 ### V1 (2026-01-27)
 - Formulário público de cálculo previdenciário
