@@ -9,6 +9,7 @@ export const leads = pgTable("leads", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
+  consentedAt: timestamp("consented_at"), // LGPD consent timestamp
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("leads_email_idx").on(table.email),
@@ -77,6 +78,37 @@ export const fpas = pgTable("fpas", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// EmailSettings - Configurações de envio de email automático (Resend)
+export const emailSettings = pgTable("email_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  enabled: boolean("enabled").notNull().default(false),
+  fromEmail: text("from_email").notNull().default("noreply@msh.adv.br"),
+  fromName: text("from_name").notNull().default("Machado Schütz Advogados"),
+  subject: text("subject").notNull().default("Seu Diagnóstico Previdenciário"),
+  bodyTemplate: text("body_template").notNull().default("Olá {{name}},\n\nSegue em anexo o seu diagnóstico previdenciário.\n\nAtenciosamente,\nMachado Schütz Advogados"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// WebhookSettings - Configurações de webhook para integração externa
+export const webhookSettings = pgTable("webhook_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  enabled: boolean("enabled").notNull().default(false),
+  url: text("url").notNull().default(""),
+  headers: text("headers").notNull().default("{}"), // JSON string of headers
+  retryCount: integer("retry_count").notNull().default(3),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// AppSettings - Configurações gerais da aplicação
+export const appSettings = pgTable("app_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  privacyPolicyUrl: text("privacy_policy_url").notNull().default("https://msh.adv.br/politica-de-privacidade/"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert Schemas
 export const insertLeadSchema = createInsertSchema(leads).omit({
   id: true,
@@ -105,6 +137,24 @@ export const insertFpasSchema = createInsertSchema(fpas).omit({
   updatedAt: true,
 });
 
+export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWebhookSettingsSchema = createInsertSchema(webhookSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
@@ -121,6 +171,15 @@ export type InsertCalculationParams = z.infer<typeof insertCalculationParamsSche
 export type Fpas = typeof fpas.$inferSelect;
 export type InsertFpas = z.infer<typeof insertFpasSchema>;
 
+export type EmailSettings = typeof emailSettings.$inferSelect;
+export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
+
+export type WebhookSettings = typeof webhookSettings.$inferSelect;
+export type InsertWebhookSettings = z.infer<typeof insertWebhookSettingsSchema>;
+
+export type AppSettings = typeof appSettings.$inferSelect;
+export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
+
 // Form validation schemas
 export const calculatorFormSchema = z.object({
   cnpj: z.string().min(14, "CNPJ deve ter 14 dígitos").max(18),
@@ -132,6 +191,9 @@ export const calculatorFormSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
   phone: z.string().optional(),
+  lgpdConsent: z.boolean().refine((val) => val === true, {
+    message: "Você deve aceitar a Política de Privacidade para continuar",
+  }),
 });
 
 export type CalculatorFormData = z.infer<typeof calculatorFormSchema>;
