@@ -21,24 +21,24 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="bg-primary sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
               <Calculator className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight">Machado Schutz</h1>
-              <p className="text-xs text-muted-foreground">Calculadora Previdenciária</p>
+              <h1 className="font-bold text-lg leading-tight text-primary-foreground">Machado Schütz</h1>
+              <p className="text-xs text-primary-foreground/80">Calculadora Previdenciária</p>
             </div>
           </div>
-          <ThemeToggle />
+          <ThemeToggle className="text-primary-foreground hover:bg-white/10" />
         </div>
       </header>
 
       {/* Hero Section */}
       {!simulationResult && (
-        <section className="relative py-12 md:py-16 bg-gradient-to-b from-primary/5 to-background">
+        <section className="relative py-12 md:py-16 bg-muted">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Descubra o Potencial de Crédito
@@ -91,12 +91,12 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card/50 py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p className="mb-2">
-            Machado Schutz Advogados - Calculadora Previdenciária V1
+      <footer className="bg-primary py-8 mt-auto">
+        <div className="container mx-auto px-4 text-center text-sm text-primary-foreground">
+          <p className="font-medium mb-2">
+            Machado Schütz Advogados - Calculadora Previdenciária V1
           </p>
-          <p>
+          <p className="opacity-80">
             Os cálculos apresentados têm caráter estimativo e não vinculante.
           </p>
         </div>

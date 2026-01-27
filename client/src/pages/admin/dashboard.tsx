@@ -299,25 +299,25 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="bg-primary sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back-home">
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" data-testid="button-back-home">
                 <ChevronLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
               <Settings className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight">Backoffice</h1>
-              <p className="text-xs text-muted-foreground">Administração</p>
+              <h1 className="font-bold text-lg leading-tight text-primary-foreground">Backoffice</h1>
+              <p className="text-xs text-primary-foreground/80">Administração</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
+            <ThemeToggle className="text-primary-foreground hover:bg-white/10" />
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={handleLogout} data-testid="button-logout">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

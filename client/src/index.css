@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE - Professional Blue/Teal Theme for Financial App */
+/* LIGHT MODE - Machado Schütz Brand Colors */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -14,39 +14,48 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
-  --border: 214 20% 88%;
+  /* Machado Schütz Brand Colors */
+  /* Primary: #1F5C4A - Verde Institucional */
+  /* Secondary: #163F34 - Verde Escuro (hover) */
+  /* Text: #1C1C1C - Preto Grafite */
+  /* Text Secondary: #4F4F4F - Cinza Médio */
+  /* Background: #FFFFFF - Branco */
+  /* Card/Container: #F2F2F2 - Cinza Claro */
+  /* Border: #E0E0E0 - Separador */
+
+  --background: 0 0% 100%;
+  --foreground: 0 0% 11%;
+  --border: 0 0% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 20% 90%;
-  --sidebar: 210 25% 96%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border: 214 20% 88%;
-  --sidebar-primary: 199 89% 48%;
+  --card-foreground: 0 0% 11%;
+  --card-border: 0 0% 88%;
+  --sidebar: 162 50% 22%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 162 48% 17%;
+  --sidebar-primary: 162 50% 24%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 199 80% 94%;
-  --sidebar-accent-foreground: 199 89% 30%;
-  --sidebar-ring: 199 89% 48%;
+  --sidebar-accent: 162 30% 90%;
+  --sidebar-accent-foreground: 162 50% 20%;
+  --sidebar-ring: 162 50% 24%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 20% 88%;
-  --primary: 199 89% 48%;
+  --popover-foreground: 0 0% 11%;
+  --popover-border: 0 0% 88%;
+  --primary: 162 50% 24%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 15% 93%;
-  --secondary-foreground: 222 47% 20%;
-  --muted: 210 15% 95%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 199 80% 94%;
-  --accent-foreground: 199 89% 30%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 0 0% 20%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 31%;
+  --accent: 162 30% 92%;
+  --accent-foreground: 162 50% 20%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 214 20% 85%;
-  --ring: 199 89% 48%;
+  --input: 0 0% 88%;
+  --ring: 162 50% 24%;
   --chart-1: 142 76% 36%;
   --chart-2: 45 93% 47%;
   --chart-3: 0 84% 60%;
-  --chart-4: 199 89% 48%;
+  --chart-4: 162 50% 24%;
   --chart-5: 262 83% 58%;
 
   --font-sans: 'Inter', sans-serif;
@@ -110,39 +119,40 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 222 47% 8%;
-  --foreground: 210 20% 98%;
-  --border: 217 19% 20%;
-  --card: 222 47% 11%;
-  --card-foreground: 210 20% 98%;
-  --card-border: 217 19% 22%;
-  --sidebar: 222 47% 10%;
-  --sidebar-foreground: 210 20% 98%;
-  --sidebar-border: 217 19% 18%;
-  --sidebar-primary: 199 89% 48%;
+  /* Machado Schütz Dark Mode */
+  --background: 162 30% 8%;
+  --foreground: 0 0% 98%;
+  --border: 162 15% 20%;
+  --card: 162 25% 11%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 162 15% 22%;
+  --sidebar: 162 40% 10%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 162 30% 18%;
+  --sidebar-primary: 162 50% 35%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 199 80% 15%;
-  --sidebar-accent-foreground: 199 89% 70%;
-  --sidebar-ring: 199 89% 48%;
-  --popover: 222 47% 11%;
-  --popover-foreground: 210 20% 98%;
-  --popover-border: 217 19% 22%;
-  --primary: 199 89% 48%;
+  --sidebar-accent: 162 30% 18%;
+  --sidebar-accent-foreground: 162 50% 70%;
+  --sidebar-ring: 162 50% 35%;
+  --popover: 162 25% 11%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 162 15% 22%;
+  --primary: 162 50% 35%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 217 19% 18%;
-  --secondary-foreground: 210 20% 90%;
-  --muted: 217 19% 15%;
-  --muted-foreground: 215 16% 57%;
-  --accent: 199 80% 20%;
-  --accent-foreground: 199 89% 80%;
+  --secondary: 162 15% 18%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 162 15% 15%;
+  --muted-foreground: 0 0% 57%;
+  --accent: 162 30% 20%;
+  --accent-foreground: 162 50% 80%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 217 19% 25%;
-  --ring: 199 89% 48%;
+  --input: 162 15% 25%;
+  --ring: 162 50% 35%;
   --chart-1: 142 76% 46%;
   --chart-2: 45 93% 57%;
   --chart-3: 0 84% 65%;
-  --chart-4: 199 89% 58%;
+  --chart-4: 162 50% 45%;
   --chart-5: 262 83% 68%;
 
   --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.3);
