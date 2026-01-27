@@ -4,6 +4,9 @@ import {
   simulations,
   calculationParams,
   fpas,
+  emailSettings,
+  webhookSettings,
+  appSettings,
   type Lead,
   type InsertLead,
   type CompanySnapshot,
@@ -14,6 +17,12 @@ import {
   type InsertCalculationParams,
   type Fpas,
   type InsertFpas,
+  type EmailSettings,
+  type InsertEmailSettings,
+  type WebhookSettings,
+  type InsertWebhookSettings,
+  type AppSettings,
+  type InsertAppSettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -43,6 +52,18 @@ export interface IStorage {
   createFpas(fpas: InsertFpas): Promise<Fpas>;
   updateFpas(id: string, fpas: Partial<InsertFpas>): Promise<Fpas>;
   deleteFpas(id: string): Promise<void>;
+
+  // Email Settings
+  getEmailSettings(): Promise<EmailSettings | undefined>;
+  upsertEmailSettings(settings: InsertEmailSettings): Promise<EmailSettings>;
+
+  // Webhook Settings
+  getWebhookSettings(): Promise<WebhookSettings | undefined>;
+  upsertWebhookSettings(settings: InsertWebhookSettings): Promise<WebhookSettings>;
+
+  // App Settings
+  getAppSettings(): Promise<AppSettings | undefined>;
+  upsertAppSettings(settings: InsertAppSettings): Promise<AppSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -64,6 +85,7 @@ export class DatabaseStorage implements IStorage {
         name: leads.name,
         email: leads.email,
         phone: leads.phone,
+        consentedAt: leads.consentedAt,
         createdAt: leads.createdAt,
         simulationsCount: sql<number>`count(${simulations.id})::int`,
       })
@@ -161,6 +183,69 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFpas(id: string): Promise<void> {
     await db.delete(fpas).where(eq(fpas.id, id));
+  }
+
+  // Email Settings
+  async getEmailSettings(): Promise<EmailSettings | undefined> {
+    const [settings] = await db.select().from(emailSettings).limit(1);
+    return settings || undefined;
+  }
+
+  async upsertEmailSettings(settings: InsertEmailSettings): Promise<EmailSettings> {
+    const existing = await this.getEmailSettings();
+    if (existing) {
+      const [updated] = await db
+        .update(emailSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(emailSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(emailSettings).values(settings).returning();
+      return created;
+    }
+  }
+
+  // Webhook Settings
+  async getWebhookSettings(): Promise<WebhookSettings | undefined> {
+    const [settings] = await db.select().from(webhookSettings).limit(1);
+    return settings || undefined;
+  }
+
+  async upsertWebhookSettings(settings: InsertWebhookSettings): Promise<WebhookSettings> {
+    const existing = await this.getWebhookSettings();
+    if (existing) {
+      const [updated] = await db
+        .update(webhookSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(webhookSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(webhookSettings).values(settings).returning();
+      return created;
+    }
+  }
+
+  // App Settings
+  async getAppSettings(): Promise<AppSettings | undefined> {
+    const [settings] = await db.select().from(appSettings).limit(1);
+    return settings || undefined;
+  }
+
+  async upsertAppSettings(settings: InsertAppSettings): Promise<AppSettings> {
+    const existing = await this.getAppSettings();
+    if (existing) {
+      const [updated] = await db
+        .update(appSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(appSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(appSettings).values(settings).returning();
+      return created;
+    }
   }
 }
 
