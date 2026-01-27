@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { calculatePrevidenciario } from "./calculation";
 import { generatePDF } from "./pdf-generator";
-import { calculatorFormSchema, insertCalculationParamsSchema, insertFpasSchema } from "@shared/schema";
+import { sendPdfEmail } from "./email-service";
+import { sendLeadWebhook } from "./webhook-service";
+import { calculatorFormSchema, insertCalculationParamsSchema, insertFpasSchema, insertEmailSettingsSchema, insertWebhookSettingsSchema, insertAppSettingsSchema } from "@shared/schema";
 import { randomBytes } from "crypto";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
@@ -57,6 +59,21 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching FPAS:", error);
       res.status(500).json({ error: "Failed to fetch FPAS" });
+    }
+  });
+
+  app.get("/api/app-settings", async (req, res) => {
+    try {
+      let settings = await storage.getAppSettings();
+      if (!settings) {
+        settings = await storage.upsertAppSettings({
+          privacyPolicyUrl: "https://msh.adv.br/politica-de-privacidade/",
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching app settings:", error);
+      res.status(500).json({ error: "Failed to fetch app settings" });
     }
   });
 
@@ -197,6 +214,7 @@ export async function registerRoutes(
           name: data.name,
           email: data.email,
           phone: data.phone || null,
+          consentedAt: data.lgpdConsent ? new Date() : null,
         });
       }
 
@@ -224,6 +242,19 @@ export async function registerRoutes(
         creditoAmarelo: calculationResult.creditoAmarelo,
         creditoVermelho: calculationResult.creditoVermelho,
       });
+
+      sendLeadWebhook({ lead, simulation, companySnapshot }).catch((err) => {
+        console.error("[Webhook] Failed to send webhook:", err);
+      });
+
+      try {
+        const pdfBuffer = await generatePDF(simulation, companySnapshot, lead, params);
+        sendPdfEmail({ lead, simulation, companySnapshot, pdfBuffer }).catch((err) => {
+          console.error("[Email] Failed to send email:", err);
+        });
+      } catch (pdfError) {
+        console.error("[PDF] Failed to generate PDF for email:", pdfError);
+      }
 
       res.json({
         simulation,
@@ -388,6 +419,100 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting FPAS:", error);
       res.status(500).json({ error: "Failed to delete FPAS" });
+    }
+  });
+
+  app.get("/api/admin/email-settings", adminAuth, async (req, res) => {
+    try {
+      let settings = await storage.getEmailSettings();
+      if (!settings) {
+        settings = await storage.upsertEmailSettings({
+          enabled: false,
+          fromEmail: "noreply@msh.adv.br",
+          fromName: "Machado Schütz Advogados",
+          subject: "Seu Diagnóstico Previdenciário",
+          bodyTemplate: "Olá {{name}},\n\nSegue em anexo o seu diagnóstico previdenciário.\n\nAtenciosamente,\nMachado Schütz Advogados",
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching email settings:", error);
+      res.status(500).json({ error: "Failed to fetch email settings" });
+    }
+  });
+
+  app.put("/api/admin/email-settings", adminAuth, async (req, res) => {
+    try {
+      const validation = insertEmailSettingsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const settings = await storage.upsertEmailSettings(validation.data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating email settings:", error);
+      res.status(500).json({ error: "Failed to update email settings" });
+    }
+  });
+
+  app.get("/api/admin/webhook-settings", adminAuth, async (req, res) => {
+    try {
+      let settings = await storage.getWebhookSettings();
+      if (!settings) {
+        settings = await storage.upsertWebhookSettings({
+          enabled: false,
+          url: "",
+          headers: "{}",
+          retryCount: 3,
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching webhook settings:", error);
+      res.status(500).json({ error: "Failed to fetch webhook settings" });
+    }
+  });
+
+  app.put("/api/admin/webhook-settings", adminAuth, async (req, res) => {
+    try {
+      const validation = insertWebhookSettingsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const settings = await storage.upsertWebhookSettings(validation.data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating webhook settings:", error);
+      res.status(500).json({ error: "Failed to update webhook settings" });
+    }
+  });
+
+  app.get("/api/admin/app-settings", adminAuth, async (req, res) => {
+    try {
+      let settings = await storage.getAppSettings();
+      if (!settings) {
+        settings = await storage.upsertAppSettings({
+          privacyPolicyUrl: "https://msh.adv.br/politica-de-privacidade/",
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching app settings:", error);
+      res.status(500).json({ error: "Failed to fetch app settings" });
+    }
+  });
+
+  app.put("/api/admin/app-settings", adminAuth, async (req, res) => {
+    try {
+      const validation = insertAppSettingsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const settings = await storage.upsertAppSettings(validation.data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating app settings:", error);
+      res.status(500).json({ error: "Failed to update app settings" });
     }
   });
 

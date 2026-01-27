@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, Search, Building2, User, Mail, Phone } from "lucide-react";
+import { Loader2, Search, Building2, User, Mail, Phone, ExternalLink } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -21,10 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { calculatorFormSchema, type CalculatorFormData, type SimulationResult, type Fpas } from "@shared/schema";
+import { calculatorFormSchema, type CalculatorFormData, type SimulationResult, type Fpas, type AppSettings } from "@shared/schema";
 import { formatCNPJ, formatPhone, unformatCNPJ } from "@/lib/formatters";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -50,12 +51,19 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       name: "",
       email: "",
       phone: "",
+      lgpdConsent: false,
     },
   });
 
   const { data: fpasOptions } = useQuery<Fpas[]>({
     queryKey: ["/api/fpas"],
   });
+
+  const { data: appSettings } = useQuery<AppSettings>({
+    queryKey: ["/api/app-settings"],
+  });
+
+  const privacyPolicyUrl = appSettings?.privacyPolicyUrl || "https://msh.adv.br/politica-de-privacidade/";
 
   useEffect(() => {
     const cleanCnpj = cnpjInput.replace(/\D/g, "");
@@ -405,6 +413,41 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                 />
               </div>
             </div>
+
+            <Separator />
+
+            {/* LGPD Consent */}
+            <FormField
+              control={form.control}
+              name="lgpdConsent"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-lgpd"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal cursor-pointer">
+                      Li e concordo com a{" "}
+                      <a
+                        href={privacyPolicyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                        data-testid="link-privacy-policy"
+                      >
+                        Política de Privacidade
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <Button
               type="submit"
