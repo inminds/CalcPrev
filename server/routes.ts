@@ -60,25 +60,101 @@ export async function registerRoutes(
     }
   });
 
+  function determinarFPAS(cnae: string | number | undefined): string {
+    if (!cnae) return "515";
+    const cnaeStr = cnae.toString().padStart(7, "0");
+    const prefixo = cnaeStr.substring(0, 2);
+    const prefixoNum = parseInt(prefixo, 10);
+    
+    if (["01", "02", "03"].includes(prefixo)) return "787";
+    if (prefixoNum >= 10 && prefixoNum <= 33) return "507";
+    if (prefixoNum >= 41 && prefixoNum <= 43) return "507";
+    if (prefixoNum >= 45 && prefixoNum <= 47) return "515";
+    return "515";
+  }
+
+  async function fetchCnpjFromBrasilAPI(cleanCnpj: string) {
+    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; CalculadoraPrevidenciaria/1.0)",
+        "Accept": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`BrasilAPI error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return {
+      razaoSocial: data.razao_social || data.nome_fantasia || "",
+      cnae: data.cnae_fiscal,
+      segmento: data.cnae_fiscal_descricao || "",
+    };
+  }
+
+  async function fetchCnpjFromReceitaWS(cleanCnpj: string) {
+    const response = await fetch(`https://receitaws.com.br/v1/cnpj/${cleanCnpj}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; CalculadoraPrevidenciaria/1.0)",
+        "Accept": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`ReceitaWS error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.status === "ERROR") {
+      throw new Error(data.message || "CNPJ não encontrado");
+    }
+    
+    const cnae = data.atividade_principal?.[0]?.code?.replace(/[.-]/g, "") || "";
+    return {
+      razaoSocial: data.nome || data.fantasia || "",
+      cnae: cnae,
+      segmento: data.atividade_principal?.[0]?.text || "",
+    };
+  }
+
   app.get("/api/cnpj/:cnpj", async (req, res) => {
     try {
       const { cnpj } = req.params;
       const cleanCnpj = cnpj.replace(/\D/g, "");
 
-      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
-      if (!response.ok) {
-        return res.status(404).json({ error: "CNPJ not found" });
+      if (cleanCnpj.length !== 14) {
+        return res.status(400).json({ error: "CNPJ inválido - deve ter 14 dígitos" });
       }
 
-      const data = await response.json();
+      let cnpjData;
+      
+      try {
+        cnpjData = await fetchCnpjFromBrasilAPI(cleanCnpj);
+      } catch (brasilApiError) {
+        console.log("BrasilAPI failed, trying ReceitaWS...", brasilApiError);
+        try {
+          cnpjData = await fetchCnpjFromReceitaWS(cleanCnpj);
+        } catch (receitaWsError) {
+          console.log("ReceitaWS also failed", receitaWsError);
+          return res.status(404).json({ 
+            error: "CNPJ não encontrado. Verifique o número ou preencha manualmente." 
+          });
+        }
+      }
+
+      const fpasCode = determinarFPAS(cnpjData.cnae);
+
       res.json({
-        razaoSocial: data.razao_social || "",
-        segmento: data.cnae_fiscal_descricao || "",
-        fpasCode: "",
+        razaoSocial: cnpjData.razaoSocial,
+        segmento: cnpjData.segmento,
+        fpasCode: fpasCode,
+        cnae: cnpjData.cnae?.toString() || "",
       });
     } catch (error) {
       console.error("Error fetching CNPJ:", error);
-      res.status(500).json({ error: "Failed to fetch CNPJ" });
+      res.status(500).json({ error: "Não foi possível consultar o CNPJ. Tente novamente." });
     }
   });
 

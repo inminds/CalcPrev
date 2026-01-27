@@ -36,6 +36,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
   const { toast } = useToast();
   const [cnpjInput, setCnpjInput] = useState("");
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
+  const [lastSearchedCnpj, setLastSearchedCnpj] = useState("");
 
   const form = useForm<CalculatorFormData>({
     resolver: zodResolver(calculatorFormSchema),
@@ -56,6 +57,18 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
     queryKey: ["/api/fpas"],
   });
 
+  useEffect(() => {
+    const cleanCnpj = cnpjInput.replace(/\D/g, "");
+    
+    if (cleanCnpj.length === 14 && cleanCnpj !== lastSearchedCnpj) {
+      const debounceTimer = setTimeout(() => {
+        searchCnpj(cnpjInput);
+      }, 500);
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [cnpjInput]);
+
   const searchCnpj = async (cnpj: string) => {
     const cleanCnpj = unformatCNPJ(cnpj);
     if (cleanCnpj.length !== 14) {
@@ -67,7 +80,13 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       return;
     }
 
+    if (cleanCnpj === lastSearchedCnpj) {
+      return;
+    }
+
     setIsSearchingCnpj(true);
+    setLastSearchedCnpj(cleanCnpj);
+    
     try {
       const response = await fetch(`/api/cnpj/${cleanCnpj}`);
       if (response.ok) {
@@ -83,16 +102,17 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
           description: data.razaoSocial,
         });
       } else {
+        const errorData = await response.json().catch(() => ({}));
         toast({
           title: "CNPJ não encontrado",
-          description: "Preencha os dados manualmente.",
+          description: errorData.error || "Preencha os dados manualmente.",
           variant: "destructive",
         });
       }
     } catch {
       toast({
         title: "Erro na busca",
-        description: "Não foi possível consultar o CNPJ. Preencha manualmente.",
+        description: "Não foi possível consultar o CNPJ. Tente novamente ou preencha manualmente.",
         variant: "destructive",
       });
     } finally {
@@ -103,7 +123,8 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
   const simulationMutation = useMutation({
     mutationFn: async (data: CalculatorFormData) => {
       const response = await apiRequest("POST", "/api/simulate", data);
-      return response as SimulationResult;
+      const result = await response.json();
+      return result as SimulationResult;
     },
     onSuccess: (result) => {
       toast({

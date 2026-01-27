@@ -1,0 +1,40 @@
+Implemente uma funcionalidade de consulta automática de CNPJ no formulário de cadastro. Quando o usuário digitar um CNPJ válido (14 dígitos), o sistema deve:
+1. **Consultar a API de CNPJ** (ReceitaWS ou BrasilAPI):
+   - Endpoint: `https://www.receitaws.com.br/v1/cnpj/{cnpj}` 
+   - Alternativa: `https://brasilapi.com.br/api/cnpj/v1/{cnpj}`
+   - Remover caracteres especiais do CNPJ antes da consulta
+2. **Preencher automaticamente os campos**:
+   - **Razão Social**: usar campo `nome` da resposta da API
+   - **Segmento**: extrair do campo `atividade_principal[0].text` (descrição do CNAE)
+   - **FPAs (Fundo de Previdência e Assistência Social)**: determinar com base no código CNAE usando a seguinte lógica:
+     - CNAE começando com 01-03 (Agropecuária): FPA 787
+     - CNAE começando com 10-33 (Indústria): FPA 507
+     - CNAE começando com 41-43 (Construção): FPA 507
+     - CNAE começando com 45-47 (Comércio): FPA 515
+     - CNAE começando com 49-99 (Serviços): FPA 515
+3. **Tratamento de erros**:
+   - Se a API não responder, mostrar mensagem amigável
+   - Se CNPJ não encontrado, permitir preenchimento manual
+   - Implementar fallback com dados de demonstração para CNPJs de teste
+4. **UX**:
+   - Mostrar indicador de carregamento durante a consulta
+   - Usar debounce de 500ms para evitar múltiplas requisições
+   - Permitir que o usuário edite os campos após preenchimento automático
+Exemplo de código para a função de consulta:
+const consultarCNPJ = async (cnpj: string) => {
+  const cnpjLimpo = cnpj.replace(/\D/g, '');
+  const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+  const data = await response.json();
+  
+  return {
+    razaoSocial: data.razao_social,
+    segmento: data.cnae_fiscal_descricao,
+    fpa: determinarFPA(data.cnae_fiscal?.toString())
+  };
+};
+const determinarFPA = (cnae: string): string => {
+  const prefixo = cnae?.substring(0, 2);
+  if (['01', '02', '03'].includes(prefixo)) return '787';
+  if (parseInt(prefixo) >= 10 && parseInt(prefixo) <= 43) return '507';
+  return '515';
+};
