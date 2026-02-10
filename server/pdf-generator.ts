@@ -33,6 +33,7 @@ const MSH_LIGHT_BG = "#F5F0EB";
 
 function getLogoPath(): string | null {
   const possiblePaths = [
+    path.join(process.cwd(), "client/public/Negativo_Dourado-Horizontal.png"),
     path.join(process.cwd(), "client/public/logo-light.png"),
     path.join(process.cwd(), "public/logo-light.png"),
   ];
@@ -85,31 +86,25 @@ export function generatePDF(
       const valueW = contentWidth - labelW;
 
       // === HEADER ===
-      const headerHeight = 90;
+      const headerHeight = 80;
       doc.rect(0, 0, pageWidth, headerHeight).fill(MSH_GREEN);
 
       const logoPath = getLogoPath();
       if (logoPath) {
         try {
-          doc.image(logoPath, margin, 18, { height: 54 });
+          doc.image(logoPath, margin, 20, { height: 40 });
         } catch {
-          doc.fillColor("#ffffff").fontSize(20).font("Helvetica-Bold").text("MSH", margin, 30);
+          doc.fillColor("#ffffff").fontSize(20).font("Helvetica-Bold").text("Machado Schutz", margin, 28);
         }
       } else {
-        doc.fillColor("#ffffff").fontSize(20).font("Helvetica-Bold").text("MSH", margin, 30);
+        doc.fillColor("#ffffff").fontSize(20).font("Helvetica-Bold").text("Machado Schutz", margin, 28);
       }
-
-      doc
-        .fillColor("#ffffff")
-        .fontSize(9)
-        .font("Helvetica")
-        .text("Advogados e Associados", pageWidth - 200, 30, { width: 150, align: "right" });
 
       doc
         .fillColor(MSH_BEIGE)
         .fontSize(12)
         .font("Helvetica-Bold")
-        .text("Diagnóstico Previdenciário", pageWidth - 200, 48, { width: 150, align: "right" });
+        .text("Diagnóstico Previdenciário", pageWidth - 210, 32, { width: 160, align: "right" });
 
       doc.rect(0, headerHeight, pageWidth, 3).fill(MSH_BEIGE);
 
