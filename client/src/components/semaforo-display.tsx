@@ -124,7 +124,8 @@ function SpeedometerGauge({
     return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
 
-  const needleAngle = startAngle + animatedPercentage * totalSweep;
+  const clampedPercentage = Math.min(animatedPercentage, 0.95);
+  const needleAngle = startAngle + clampedPercentage * totalSweep;
   const needleRad = (needleAngle * Math.PI) / 180;
   const needleLength = radius - 18;
   const needleTipX = cx + needleLength * Math.cos(needleRad);
