@@ -213,6 +213,10 @@ export async function registerRoutes(
 
       const data = validation.data;
 
+      const baseInputType = data.baseInputType || "colaboradores";
+      const colaboradores = baseInputType === "colaboradores" ? data.colaboradores ?? 0 : 0;
+      const folhaMedia = baseInputType === "folha" ? data.folhaMedia ?? 0 : undefined;
+
       let params = await storage.getCalculationParams();
       if (!params) {
         params = await storage.upsertCalculationParams({
@@ -231,11 +235,15 @@ export async function registerRoutes(
       }
 
       const calculationResult = calculatePrevidenciario({
-        colaboradores: data.colaboradores,
+        colaboradores,
         isDesonerada: data.isDesonerada,
         fpas: fpasData,
         params: params,
+        baseInputType,
+        folhaMedia,
       });
+
+      const fpasDescricao = fpasData.descricao;
 
       // Get existing lead or prepare new lead data
       const existingLead = await storage.getLeadByEmail(data.email);
@@ -255,13 +263,17 @@ export async function registerRoutes(
           segmento: data.segmento,
           fpasCode: data.fpasCode,
           isDesonerada: data.isDesonerada,
-          colaboradores: data.colaboradores,
+          colaboradores: colaboradores,
+          baseInputType,
+          folhaMedia,
         },
         simulation: {
           salarioMinimo: params.salarioMinimo,
           aliquotaFpas: calculationResult.aliquotaFpas,
           aliquotaRat: calculationResult.aliquotaRat,
           mesesProjetados: calculationResult.mesesProjetados,
+          baseInputType,
+          folhaMedia,
           baseFolha: calculationResult.baseFolha,
           impostoMensalEstimado: calculationResult.impostoMensalEstimado,
           totalProjetado: calculationResult.totalProjetado,
@@ -278,7 +290,13 @@ export async function registerRoutes(
 
       enqueueJob("pdf-email", async () => {
         try {
-          const pdfBuffer = await generatePDF(simulation, companySnapshot, lead, params);
+          const pdfBuffer = await generatePDF(
+            simulation,
+            companySnapshot,
+            lead,
+            params,
+            fpasDescricao
+          );
           await sendPdfEmail({ lead, simulation, companySnapshot, pdfBuffer });
         } catch (pdfError) {
           console.error("[PDF] Failed to generate PDF for email:", pdfError);
@@ -310,11 +328,14 @@ export async function registerRoutes(
         return res.status(500).json({ error: "Calculation params not found" });
       }
 
+      const fpasInfo = await storage.getFpasByCode(result.companySnapshot.fpasCode);
+
       const pdfBuffer = await generatePDF(
         result.simulation,
         result.companySnapshot,
         result.lead,
-        params
+        params,
+        fpasInfo?.descricao
       );
 
       res.setHeader("Content-Type", "application/pdf");

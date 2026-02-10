@@ -5,6 +5,8 @@ export interface CalculationInput {
   isDesonerada: boolean;
   fpas: Fpas;
   params: CalculationParams;
+  baseInputType?: "colaboradores" | "folha";
+  folhaMedia?: number;
 }
 
 export interface CalculationResult {
@@ -21,7 +23,7 @@ export interface CalculationResult {
 }
 
 export function calculatePrevidenciario(input: CalculationInput): CalculationResult {
-  const { colaboradores, isDesonerada, fpas, params } = input;
+  const { colaboradores, isDesonerada, fpas, params, baseInputType = "colaboradores", folhaMedia } = input;
 
   const salarioMinimo = parseFloat(params.salarioMinimo);
   const percentualCredito = parseFloat(params.percentualCredito);
@@ -33,7 +35,9 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
   const aliquotaTerceiros = parseFloat(fpas.aliquotaTerceiros);
   const aliquotaRat = isDesonerada ? 0 : 0.03;
 
-  const baseFolha = salarioMinimo * colaboradores;
+  const baseFolha = baseInputType === "folha" && typeof folhaMedia === "number"
+    ? folhaMedia
+    : salarioMinimo * colaboradores;
 
   const aliquotaTotal = aliquotaTerceiros + aliquotaRat;
   const impostoMensalEstimado = baseFolha * aliquotaTotal;

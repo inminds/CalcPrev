@@ -109,6 +109,19 @@
   --semaforo-vermelho: 0 84% 60%;
 }
 
+@layer utilities {
+  @keyframes velocity-sweep {
+    0% { transform: translateX(-120%); }
+    55% { transform: translateX(120%); }
+    100% { transform: translateX(120%); }
+  }
+
+  @keyframes needle-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.65; }
+  }
+}
+
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);

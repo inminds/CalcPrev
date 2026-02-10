@@ -26,47 +26,37 @@ export function SemaforoDisplay({
   };
 
   const textSizes = {
-    sm: { label: "text-xs", value: "text-sm font-semibold", percent: "text-xs" },
-    md: { label: "text-sm", value: "text-lg font-bold", percent: "text-sm" },
-    lg: { label: "text-base", value: "text-2xl font-bold", percent: "text-base" },
+    sm: { value: "text-sm font-semibold", percent: "text-xs" },
+    md: { value: "text-lg font-bold", percent: "text-sm" },
+    lg: { value: "text-2xl font-bold", percent: "text-base" },
   };
+
+  const clampPercent = (value?: number) => Math.max(0, Math.min(1, Number(value) || 0));
 
   const items = [
     {
+      key: "verde",
       label: "Baixo Risco",
       value: creditoVerde,
-      percentage: percentualVerde,
+      percentage: clampPercent(percentualVerde),
       bgColor: "bg-emerald-500 dark:bg-emerald-600",
       textColor: "text-white",
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
     },
     {
+      key: "amarelo",
       label: "Médio Risco",
       value: creditoAmarelo,
-      percentage: percentualAmarelo,
+      percentage: clampPercent(percentualAmarelo),
       bgColor: "bg-amber-500 dark:bg-amber-600",
       textColor: "text-white",
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      ),
     },
     {
+      key: "vermelho",
       label: "Alto Risco",
       value: creditoVermelho,
-      percentage: percentualVermelho,
+      percentage: clampPercent(percentualVermelho),
       bgColor: "bg-red-500 dark:bg-red-600",
       textColor: "text-white",
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
     },
   ];
 
@@ -75,21 +65,52 @@ export function SemaforoDisplay({
       {items.map((item, index) => (
         <div
           key={index}
-          className={`${item.bgColor} ${item.textColor} rounded-lg ${sizeClasses[size]} flex flex-col shadow-md transition-transform hover:scale-[1.02]`}
-          data-testid={`semaforo-${item.label.toLowerCase().replace(" ", "-")}`}
+          className={`${item.bgColor} ${item.textColor} rounded-lg ${sizeClasses[size]} flex flex-col shadow-md transition-transform hover:scale-[1.02] relative overflow-hidden`}
+          data-testid={`semaforo-${item.key}`}
         >
-          <div className="flex items-center gap-2 mb-2">
-            {item.icon}
-            <span className={textSizes[size].label}>{item.label}</span>
+          <div className="pointer-events-none absolute inset-0">
+            <div
+              className="absolute -inset-x-16 -top-1/2 h-[220%] opacity-25"
+              style={{
+                background:
+                  "linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 70%)",
+                animation: `velocity-sweep 3s ease-in-out infinite`,
+                animationDelay: `${index * 0.35}s`,
+              }}
+            />
           </div>
-          <div className="flex items-baseline justify-between">
-            <span className={textSizes[size].value}>
-              {formatCurrency(item.value)}
-            </span>
-            <span className={`${textSizes[size].percent} opacity-90`}>
-              {formatPercentage(item.percentage)}
-            </span>
+
+          <div className="flex flex-col gap-1 relative z-10">
+            <span className={textSizes[size].value}>{formatCurrency(item.value)}</span>
+            <span className={`${textSizes[size].percent} opacity-90`}>{formatPercentage(item.percentage)}</span>
           </div>
+
+          <div className="relative z-10 mt-3 h-2.5 rounded-full bg-white/25 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white/90 shadow-sm transition-all duration-700 ease-out"
+              style={{ width: `${Math.round(item.percentage * 100)}%` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 rounded-full border border-white/30"
+              style={{
+                animation: `needle-pulse 2.6s ease-in-out infinite`,
+                animationDelay: `${index * 0.35}s`,
+              }}
+            />
+          </div>
+
+          <div className="relative z-10 mt-4 flex justify-center">
+            <div className="relative h-10 w-24 rounded-b-full rounded-t-[999px] border border-white/25 bg-white/10 overflow-hidden">
+              <div className="absolute inset-x-3 bottom-2 h-[6px] rounded-full bg-white/20" />
+              <div
+                className="absolute left-1/2 bottom-[6px] h-8 w-[2px] bg-white shadow-sm origin-bottom transition-transform duration-700 ease-out"
+                style={{ transform: `translateX(-50%) rotate(${(-60 + item.percentage * 240).toFixed(1)}deg)` }}
+              />
+              <div className="absolute inset-x-0 bottom-0 h-3 bg-gradient-to-t from-black/10 to-transparent" />
+            </div>
+          </div>
+
+          <span className="sr-only">{item.label}</span>
         </div>
       ))}
     </div>

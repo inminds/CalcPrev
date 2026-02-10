@@ -27,7 +27,8 @@ export function generatePDF(
   simulation: Simulation,
   companySnapshot: CompanySnapshot,
   lead: Lead,
-  params: CalculationParams
+  params: CalculationParams,
+  fpasDescription?: string
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
@@ -69,12 +70,19 @@ export function generatePDF(
 
       doc.fontSize(10).font("Helvetica");
 
+      const baseLabel = companySnapshot.baseInputType === "folha" ? "Valor médio da folha:" : "Colaboradores:";
+      const baseValue = companySnapshot.baseInputType === "folha"
+        ? formatCurrency(companySnapshot.folhaMedia || simulation.folhaMedia || simulation.baseFolha)
+        : companySnapshot.colaboradores.toString();
+
+      const fpasLine = fpasDescription ? `${companySnapshot.fpasCode} - ${fpasDescription}` : companySnapshot.fpasCode;
+
       const companyData = [
         { label: "CNPJ:", value: formatCNPJ(companySnapshot.cnpj) },
         { label: "Razão Social:", value: companySnapshot.razaoSocial },
         { label: "Segmento:", value: companySnapshot.segmento },
-        { label: "FPAS:", value: companySnapshot.fpasCode },
-        { label: "Colaboradores:", value: companySnapshot.colaboradores.toString() },
+        { label: "FPAS:", value: fpasLine },
+        { label: baseLabel, value: baseValue },
         { label: "Desonerada:", value: companySnapshot.isDesonerada ? "Sim" : "Não" },
       ];
 
@@ -111,7 +119,7 @@ export function generatePDF(
         .text("Crédito Estimado Total: " + formatCurrency(simulation.creditoEstimadoTotal), 50, y);
 
       y += 40;
-      doc.fillColor(textColor).fontSize(14).font("Helvetica-Bold").text("Distribuição por Nível de Risco", 50, y);
+      doc.fillColor(textColor).fontSize(14).font("Helvetica-Bold").text("Distribuição", 50, y);
       y += 25;
 
       const boxWidth = 150;
@@ -119,41 +127,25 @@ export function generatePDF(
       const spacing = 20;
       const startX = 50;
 
-      doc.rect(startX, y, boxWidth, boxHeight).fill("#10b981");
-      doc
-        .fillColor("#ffffff")
-        .fontSize(10)
-        .font("Helvetica-Bold")
-        .text("BAIXO RISCO", startX + 10, y + 10);
-      doc.fontSize(14).text(formatCurrency(simulation.creditoVerde), startX + 10, y + 28);
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text(formatPercentage(params.percentualVerde), startX + 10, y + 46);
+      const distribution = [
+        { color: "#10b981", value: simulation.creditoVerde, percent: params.percentualVerde },
+        { color: "#f59e0b", value: simulation.creditoAmarelo, percent: params.percentualAmarelo },
+        { color: "#ef4444", value: simulation.creditoVermelho, percent: params.percentualVermelho },
+      ];
 
-      doc.rect(startX + boxWidth + spacing, y, boxWidth, boxHeight).fill("#f59e0b");
-      doc
-        .fillColor("#ffffff")
-        .fontSize(10)
-        .font("Helvetica-Bold")
-        .text("MÉDIO RISCO", startX + boxWidth + spacing + 10, y + 10);
-      doc.fontSize(14).text(formatCurrency(simulation.creditoAmarelo), startX + boxWidth + spacing + 10, y + 28);
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text(formatPercentage(params.percentualAmarelo), startX + boxWidth + spacing + 10, y + 46);
-
-      doc.rect(startX + 2 * (boxWidth + spacing), y, boxWidth, boxHeight).fill("#ef4444");
-      doc
-        .fillColor("#ffffff")
-        .fontSize(10)
-        .font("Helvetica-Bold")
-        .text("ALTO RISCO", startX + 2 * (boxWidth + spacing) + 10, y + 10);
-      doc.fontSize(14).text(formatCurrency(simulation.creditoVermelho), startX + 2 * (boxWidth + spacing) + 10, y + 28);
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text(formatPercentage(params.percentualVermelho), startX + 2 * (boxWidth + spacing) + 10, y + 46);
+      distribution.forEach((item, idx) => {
+        const offsetX = startX + idx * (boxWidth + spacing);
+        doc.rect(offsetX, y, boxWidth, boxHeight).fill(item.color);
+        doc
+          .fillColor("#ffffff")
+          .fontSize(14)
+          .font("Helvetica-Bold")
+          .text(formatCurrency(item.value), offsetX + 10, y + 16);
+        doc
+          .fontSize(10)
+          .font("Helvetica")
+          .text(formatPercentage(item.percent), offsetX + 10, y + 38);
+      });
 
       y += boxHeight + 40;
 

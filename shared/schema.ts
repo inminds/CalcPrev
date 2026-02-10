@@ -24,6 +24,8 @@ export const companySnapshots = pgTable("company_snapshots", {
   fpasCode: text("fpas_code").notNull(),
   isDesonerada: boolean("is_desonerada").notNull(),
   colaboradores: integer("colaboradores").notNull(),
+  baseInputType: text("base_input_type").notNull().default("colaboradores"),
+  folhaMedia: decimal("folha_media", { precision: 15, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -38,6 +40,8 @@ export const simulations = pgTable("simulations", {
   aliquotaFpas: decimal("aliquota_fpas", { precision: 5, scale: 4 }).notNull(),
   aliquotaRat: decimal("aliquota_rat", { precision: 5, scale: 4 }).notNull(),
   mesesProjetados: integer("meses_projetados").notNull(),
+  baseInputType: text("base_input_type").notNull().default("colaboradores"),
+  folhaMedia: decimal("folha_media", { precision: 15, scale: 2 }),
   
   // Resultados
   baseFolha: decimal("base_folha", { precision: 15, scale: 2 }).notNull(),
@@ -197,13 +201,23 @@ export const calculatorFormSchema = z.object({
   segmento: z.string().min(1, "Segmento é obrigatório"),
   fpasCode: z.string().min(1, "FPAS é obrigatório"),
   isDesonerada: z.boolean(),
-  colaboradores: z.number().min(1, "Mínimo de 1 colaborador"),
+  baseInputType: z.enum(["colaboradores", "folha"]).default("colaboradores"),
+  colaboradores: z.number().min(1, "Mínimo de 1 colaborador").optional(),
+  folhaMedia: z.number().min(1, "Informe o valor médio da folha").optional(),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
   phone: z.string().optional(),
   lgpdConsent: z.boolean().refine((val) => val === true, {
     message: "Você deve aceitar a Política de Privacidade para continuar",
   }),
+}).refine((data) => {
+  if (data.baseInputType === "colaboradores") {
+    return (data.colaboradores ?? 0) >= 1;
+  }
+  return (data.folhaMedia ?? 0) > 0;
+}, {
+  message: "Informe colaboradores ou valor médio de folha conforme o modo escolhido",
+  path: ["baseInputType"],
 });
 
 export type CalculatorFormData = z.infer<typeof calculatorFormSchema>;

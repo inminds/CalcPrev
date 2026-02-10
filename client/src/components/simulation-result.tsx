@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { SemaforoDisplay } from "@/components/semaforo-display";
 import { formatCurrency, formatCNPJ } from "@/lib/formatters";
 import { Download, ArrowLeft, Building2, Calculator, TrendingUp } from "lucide-react";
-import type { SimulationResult } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import type { SimulationResult, Fpas } from "@shared/schema";
 
 interface SimulationResultProps {
   result: SimulationResult;
@@ -14,6 +15,22 @@ interface SimulationResultProps {
 
 export function SimulationResultDisplay({ result, onNewSimulation }: SimulationResultProps) {
   const { simulation, companySnapshot } = result;
+  const { data: fpasOptions } = useQuery<Fpas[]>({ queryKey: ["/api/fpas"] });
+
+  const fpasDescricao = fpasOptions?.find((item) => item.code === companySnapshot.fpasCode)?.descricao;
+  const fpasDisplay = fpasDescricao ? `${companySnapshot.fpasCode} - ${fpasDescricao}` : companySnapshot.fpasCode;
+  const baseLabel = companySnapshot.baseInputType === "folha" ? "Valor médio da folha" : "Colaboradores";
+  const baseValue = companySnapshot.baseInputType === "folha"
+    ? formatCurrency(simulation.folhaMedia || companySnapshot.folhaMedia || simulation.baseFolha)
+    : companySnapshot.colaboradores;
+
+  const totalCredito = [simulation.creditoVerde, simulation.creditoAmarelo, simulation.creditoVermelho]
+    .map((v) => Number(v) || 0)
+    .reduce((acc, v) => acc + v, 0);
+
+  const percentualVerde = totalCredito ? Number(simulation.creditoVerde) / totalCredito : 0;
+  const percentualAmarelo = totalCredito ? Number(simulation.creditoAmarelo) / totalCredito : 0;
+  const percentualVermelho = totalCredito ? Number(simulation.creditoVermelho) / totalCredito : 0;
 
   const handleDownloadPdf = async () => {
     try {
@@ -78,15 +95,15 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Colaboradores:</span>
+                <span className="text-muted-foreground">{baseLabel}:</span>
                 <span className="ml-2 font-medium" data-testid="text-colaboradores">
-                  {companySnapshot.colaboradores}
+                  {companySnapshot.baseInputType === "folha" ? baseValue : companySnapshot.colaboradores}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">FPAS:</span>
                 <span className="ml-2 font-medium" data-testid="text-fpas">
-                  {companySnapshot.fpasCode}
+                  {fpasDisplay}
                 </span>
               </div>
               <div>
@@ -155,12 +172,15 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
           {/* Semáforo de Risco */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 font-medium">
-              <span className="text-lg">Distribuição por Nível de Risco</span>
+              <span className="text-lg">Distribuição</span>
             </div>
             <SemaforoDisplay
               creditoVerde={simulation.creditoVerde}
               creditoAmarelo={simulation.creditoAmarelo}
               creditoVermelho={simulation.creditoVermelho}
+              percentualVerde={percentualVerde}
+              percentualAmarelo={percentualAmarelo}
+              percentualVermelho={percentualVermelho}
               size="lg"
             />
           </div>

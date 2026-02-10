@@ -47,13 +47,38 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       segmento: "",
       fpasCode: "",
       isDesonerada: false,
-      colaboradores: 1,
+      baseInputType: "colaboradores",
+      colaboradores: 100,
+      folhaMedia: undefined,
       name: "",
       email: "",
       phone: "",
       lgpdConsent: false,
     },
   });
+
+  const formatCurrencyBRL = (value: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+    }).format(value);
+
+  const [folhaMediaInput, setFolhaMediaInput] = useState(formatCurrencyBRL(15000));
+  const baseInputType = form.watch("baseInputType");
+
+  useEffect(() => {
+    if (baseInputType === "colaboradores") {
+      const current = form.getValues("colaboradores");
+      const nextValue = current && current > 10 ? current : 100;
+      form.setValue("colaboradores", nextValue);
+    } else {
+      const currentFolha = form.getValues("folhaMedia");
+      const nextFolha = currentFolha && currentFolha > 0 ? currentFolha : 15000;
+      form.setValue("folhaMedia", nextFolha);
+      setFolhaMediaInput(formatCurrencyBRL(nextFolha));
+    }
+  }, [baseInputType, form]);
 
   const { data: fpasOptions } = useQuery<Fpas[]>({
     queryKey: ["/api/fpas"],
@@ -233,7 +258,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                 )}
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="segmento"
@@ -252,82 +277,147 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="fpasCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Enquadramento FPAS</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fpasCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Enquadramento FPAS</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-fpas">
+                              <SelectValue placeholder="Selecione o FPAS" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {fpasOptions?.map((fpas) => (
+                              <SelectItem
+                                key={fpas.code}
+                                value={fpas.code}
+                                data-testid={`select-fpas-${fpas.code}`}
+                              >
+                                {fpas.code} - {fpas.descricao}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="isDesonerada"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Empresa Desonerada?
+                          </FormLabel>
+                        </div>
                         <FormControl>
-                          <SelectTrigger data-testid="select-fpas">
-                            <SelectValue placeholder="Selecione o FPAS" />
-                          </SelectTrigger>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-desonerada"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {fpasOptions?.map((fpas) => (
-                            <SelectItem
-                              key={fpas.code}
-                              value={fpas.code}
-                              data-testid={`select-fpas-${fpas.code}`}
-                            >
-                              {fpas.code} - {fpas.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="isDesonerada"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Empresa Desonerada?
-                        </FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-desonerada"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="baseInputType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Base para o cálculo</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            if (value === "colaboradores") {
+                              const current = form.getValues("colaboradores");
+                              const nextValue = current && current > 10 ? current : 100;
+                              form.setValue("colaboradores", nextValue);
+                            } else {
+                              const nextFolha = form.getValues("folhaMedia") || 15000;
+                              form.setValue("folhaMedia", nextFolha);
+                              setFolhaMediaInput(formatCurrencyBRL(nextFolha));
+                            }
+                          }}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-base-input">
+                              <SelectValue placeholder="Selecione a base" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="colaboradores">Quantidade de colaboradores</SelectItem>
+                            <SelectItem value="folha">Valor médio da folha (R$)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="colaboradores"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade de Colaboradores</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          min={1}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value) || 1)
-                          }
-                          data-testid="input-colaboradores"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  {baseInputType === "colaboradores" ? (
+                    <FormField
+                      control={form.control}
+                      name="colaboradores"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantidade de colaboradores</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min={11}
+                              onChange={(e) => {
+                                const parsed = parseInt(e.target.value) || 0;
+                                const safeValue = Math.max(11, parsed);
+                                field.onChange(safeValue);
+                              }}
+                              data-testid="input-colaboradores"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="folhaMedia"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor médio mensal da folha (R$)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              value={folhaMediaInput}
+                              onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "");
+                                const numeric = digits ? Number(digits) / 100 : 0;
+                                const display = digits ? formatCurrencyBRL(numeric) : "";
+                                setFolhaMediaInput(display || formatCurrencyBRL(15000));
+                                field.onChange(numeric || 15000);
+                              }}
+                              data-testid="input-folha-media"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
+                </div>
               </div>
             </div>
 
