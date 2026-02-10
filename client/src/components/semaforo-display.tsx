@@ -124,8 +124,7 @@ function SpeedometerGauge({
     return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
 
-  const clampedPercentage = Math.min(animatedPercentage, 0.95);
-  const needleAngle = startAngle + clampedPercentage * totalSweep;
+  const needleAngle = startAngle + animatedPercentage * totalSweep;
   const needleRad = (needleAngle * Math.PI) / 180;
   const needleLength = radius - 18;
   const needleTipX = cx + needleLength * Math.cos(needleRad);
@@ -138,8 +137,8 @@ function SpeedometerGauge({
       <div className="relative">
         <svg
           width="200"
-          height="140"
-          viewBox="0 0 200 140"
+          height="150"
+          viewBox="0 0 200 150"
           className="drop-shadow-lg"
         >
           <defs>
@@ -184,12 +183,11 @@ function SpeedometerGauge({
             x2={needleTipX}
             y2={needleTipY}
             stroke={color}
-            strokeWidth="2.5"
+            strokeWidth="3"
             strokeLinecap="round"
-            filter={`url(#glow-${label})`}
           />
-          <circle cx={cx} cy={cy} r="6" fill={color} />
-          <circle cx={cx} cy={cy} r="3" fill="white" opacity="0.8" />
+          <circle cx={cx} cy={cy} r="7" fill={color} />
+          <circle cx={cx} cy={cy} r="3.5" fill="white" opacity="0.9" />
 
           <circle
             cx={cx}
