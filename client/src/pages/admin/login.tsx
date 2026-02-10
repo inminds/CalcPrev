@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Lock, KeyRound } from "lucide-react";
+import { Loader2, Lock, KeyRound, LogIn } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
@@ -27,6 +28,21 @@ export default function AdminLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [azureConfigured, setAzureConfigured] = useState(true);
+  const [checkingAzure, setCheckingAzure] = useState(false);
+
+  useEffect(() => {
+    // Em desenvolvimento, sempre mostra o botão Azure (mesmo se não configurado)
+    // O backend tratará o erro graciosamente
+    // Em produção, verifica se está configurado
+    if (import.meta.env.PROD) {
+      fetch("/api/public/azure-config")
+        .then(res => res.json())
+        .then(data => setAzureConfigured(data.azureConfigured))
+        .catch(() => setAzureConfigured(false))
+        .finally(() => setCheckingAzure(false));
+    }
+  }, []);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -42,6 +58,7 @@ export default function AdminLogin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -70,6 +87,10 @@ export default function AdminLogin() {
     }
   };
 
+  const handleAzureLogin = () => {
+    window.location.href = "/api/admin/azure/login";
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
@@ -82,7 +103,22 @@ export default function AdminLogin() {
             Digite a senha de administrador para acessar
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {azureConfigured && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleAzureLogin}
+                data-testid="button-azure-login"
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Entrar com Microsoft
+              </Button>
+              <Separator />
+            </>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField

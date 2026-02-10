@@ -116,70 +116,105 @@ export default function AdminDashboard() {
   const [editingFpas, setEditingFpas] = useState<Fpas | null>(null);
 
   const token = sessionStorage.getItem("adminToken");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    let isMounted = true;
+
+    if (token) {
+      setIsAuthenticated(true);
+      return;
+    }
+
+    fetch("/api/admin/me", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        setIsAuthenticated(Boolean(data?.authenticated));
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setIsAuthenticated(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
+  useEffect(() => {
+    if (isAuthenticated === false) {
       setLocation("/admin");
     }
-  }, [token, setLocation]);
+  }, [isAuthenticated, setLocation]);
 
-  const authHeaders = {
-    Authorization: `Bearer ${token}`,
+  const authHeaders: Record<string, string> = {};
+  if (token) {
+    authHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  const fetchAdmin = (url: string, options: RequestInit = {}) => {
+    const mergedHeaders = { ...authHeaders, ...(options.headers || {}) };
+    return fetch(url, {
+      ...options,
+      headers: mergedHeaders,
+      credentials: "include",
+    });
   };
 
   const { data: params, isLoading: paramsLoading } = useQuery<CalculationParams>({
     queryKey: ["/api/admin/params"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/params", { headers: authHeaders });
+      const res = await fetchAdmin("/api/admin/params");
       if (!res.ok) throw new Error("Failed to fetch params");
       return res.json();
     },
-    enabled: !!token,
+    enabled: isAuthenticated === true,
   });
 
   const { data: fpasData, isLoading: fpasLoading } = useQuery<Fpas[]>({
     queryKey: ["/api/fpas"],
-    enabled: !!token,
+    enabled: isAuthenticated === true,
   });
 
   const { data: leads, isLoading: leadsLoading } = useQuery<(Lead & { simulationsCount: number })[]>({
     queryKey: ["/api/admin/leads"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/leads", { headers: authHeaders });
+      const res = await fetchAdmin("/api/admin/leads");
       if (!res.ok) throw new Error("Failed to fetch leads");
       return res.json();
     },
-    enabled: !!token,
+    enabled: isAuthenticated === true,
   });
 
   const { data: emailSettings, isLoading: emailSettingsLoading } = useQuery<EmailSettings>({
     queryKey: ["/api/admin/email-settings"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/email-settings", { headers: authHeaders });
+      const res = await fetchAdmin("/api/admin/email-settings");
       if (!res.ok) throw new Error("Failed to fetch email settings");
       return res.json();
     },
-    enabled: !!token,
+    enabled: isAuthenticated === true,
   });
 
   const { data: webhookSettings, isLoading: webhookSettingsLoading } = useQuery<WebhookSettings>({
     queryKey: ["/api/admin/webhook-settings"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/webhook-settings", { headers: authHeaders });
+      const res = await fetchAdmin("/api/admin/webhook-settings");
       if (!res.ok) throw new Error("Failed to fetch webhook settings");
       return res.json();
     },
-    enabled: !!token,
+    enabled: isAuthenticated === true,
   });
 
   const { data: appSettings, isLoading: appSettingsLoading } = useQuery<AppSettings>({
     queryKey: ["/api/admin/app-settings"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/app-settings", { headers: authHeaders });
+      const res = await fetchAdmin("/api/admin/app-settings");
       if (!res.ok) throw new Error("Failed to fetch app settings");
       return res.json();
     },
-    enabled: !!token,
+    enabled: isAuthenticated === true,
   });
 
   const paramsForm = useForm<ParamsFormData>({
@@ -285,9 +320,9 @@ export default function AdminDashboard() {
         percentualVermelho: (parseFloat(data.percentualVermelho) / 100).toString(),
         mesesProjecao: parseInt(data.mesesProjecao),
       };
-      const res = await fetch("/api/admin/params", {
+      const res = await fetchAdmin("/api/admin/params", {
         method: "PUT",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to update params");
@@ -309,9 +344,9 @@ export default function AdminDashboard() {
         descricao: data.descricao,
         aliquotaTerceiros: (parseFloat(data.aliquotaTerceiros) / 100).toString(),
       };
-      const res = await fetch("/api/admin/fpas", {
+      const res = await fetchAdmin("/api/admin/fpas", {
         method: "POST",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to create FPAS");
@@ -335,9 +370,9 @@ export default function AdminDashboard() {
         descricao: data.descricao,
         aliquotaTerceiros: (parseFloat(data.aliquotaTerceiros) / 100).toString(),
       };
-      const res = await fetch(`/api/admin/fpas/${data.id}`, {
+      const res = await fetchAdmin(`/api/admin/fpas/${data.id}`, {
         method: "PUT",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to update FPAS");
@@ -357,9 +392,8 @@ export default function AdminDashboard() {
 
   const deleteFpasMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/fpas/${id}`, {
+      const res = await fetchAdmin(`/api/admin/fpas/${id}`, {
         method: "DELETE",
-        headers: authHeaders,
       });
       if (!res.ok) throw new Error("Failed to delete FPAS");
     },
@@ -374,9 +408,9 @@ export default function AdminDashboard() {
 
   const updateEmailSettingsMutation = useMutation({
     mutationFn: async (data: EmailSettingsFormData) => {
-      const res = await fetch("/api/admin/email-settings", {
+      const res = await fetchAdmin("/api/admin/email-settings", {
         method: "PUT",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error("Failed to update email settings");
@@ -397,9 +431,9 @@ export default function AdminDashboard() {
         ...data,
         retryCount: parseInt(data.retryCount) || 3,
       };
-      const res = await fetch("/api/admin/webhook-settings", {
+      const res = await fetchAdmin("/api/admin/webhook-settings", {
         method: "PUT",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to update webhook settings");
@@ -416,9 +450,9 @@ export default function AdminDashboard() {
 
   const updateAppSettingsMutation = useMutation({
     mutationFn: async (data: AppSettingsFormData) => {
-      const res = await fetch("/api/admin/app-settings", {
+      const res = await fetchAdmin("/api/admin/app-settings", {
         method: "PUT",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error("Failed to update app settings");
@@ -433,14 +467,29 @@ export default function AdminDashboard() {
     },
   });
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     sessionStorage.removeItem("adminToken");
+    try {
+      const res = await fetch("/api/admin/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ returnTo: `${window.location.origin}/admin` }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data?.logoutUrl) {
+        window.location.href = data.logoutUrl;
+        return;
+      }
+    } catch {
+      // Ignore logout failures and still redirect
+    }
     setLocation("/admin");
   };
 
   const handleExportLeads = async () => {
     try {
-      const res = await fetch("/api/admin/leads/export", { headers: authHeaders });
+      const res = await fetchAdmin("/api/admin/leads/export");
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
@@ -482,7 +531,8 @@ export default function AdminDashboard() {
     }
   };
 
-  if (!token) return null;
+  if (isAuthenticated === null) return null;
+  if (isAuthenticated === false) return null;
 
   return (
     <div className="min-h-screen bg-background">

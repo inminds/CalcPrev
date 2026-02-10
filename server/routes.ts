@@ -5,6 +5,9 @@ import { calculatePrevidenciario } from "./calculation";
 import { generatePDF } from "./pdf-generator";
 import { sendPdfEmail } from "./email-service";
 import { sendLeadWebhook } from "./webhook-service";
+import { enqueueJob } from "./background-jobs";
+import { startAzureLogin, handleAzureCallback, buildAzureLogoutUrl, isAzureConfigured } from "./azure-auth";
+import { cnpjCache } from "./cnpj-cache";
 import { calculatorFormSchema, insertCalculationParamsSchema, insertFpasSchema, insertEmailSettingsSchema, insertWebhookSettingsSchema, insertAppSettingsSchema } from "@shared/schema";
 import { randomBytes } from "crypto";
 
@@ -19,31 +22,46 @@ function generateSecureToken(): string {
 
 function cleanupExpiredTokens() {
   const now = Date.now();
-  for (const [token, data] of activeTokens.entries()) {
+  for (const [token, data] of Array.from(activeTokens.entries())) {
     if (now - data.createdAt > TOKEN_EXPIRY_MS) {
       activeTokens.delete(token);
     }
   }
 }
 
+function getSessionAdmin(req: Request) {
+  const admin = req.session.admin;
+  if (!admin) return null;
+  if (admin.expiresAt <= Date.now()) {
+    req.session.admin = undefined;
+    return null;
+  }
+  return admin;
+}
+
 function adminAuth(req: Request, res: Response, next: NextFunction) {
+  const sessionAdmin = getSessionAdmin(req);
+  if (sessionAdmin) {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  
+
   const token = authHeader.substring(7);
   const tokenData = activeTokens.get(token);
-  
+
   if (!tokenData) {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
-  
+
   if (Date.now() - tokenData.createdAt > TOKEN_EXPIRY_MS) {
     activeTokens.delete(token);
     return res.status(401).json({ error: "Token expired" });
   }
-  
+
   next();
 }
 
@@ -145,6 +163,12 @@ export async function registerRoutes(
         return res.status(400).json({ error: "CNPJ inválido - deve ter 14 dígitos" });
       }
 
+      // Verifica cache primeiro
+      const cachedData = cnpjCache.get(cleanCnpj);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
       let cnpjData;
       
       try {
@@ -163,12 +187,17 @@ export async function registerRoutes(
 
       const fpasCode = determinarFPAS(cnpjData.cnae);
 
-      res.json({
+      const responseData = {
         razaoSocial: cnpjData.razaoSocial,
         segmento: cnpjData.segmento,
         fpasCode: fpasCode,
         cnae: cnpjData.cnae?.toString() || "",
-      });
+      };
+
+      // Armazena no cache
+      cnpjCache.set(cleanCnpj, responseData);
+
+      res.json(responseData);
     } catch (error) {
       console.error("Error fetching CNPJ:", error);
       res.status(500).json({ error: "Não foi possível consultar o CNPJ. Tente novamente." });
@@ -208,53 +237,53 @@ export async function registerRoutes(
         params: params,
       });
 
-      let lead = await storage.getLeadByEmail(data.email);
-      if (!lead) {
-        lead = await storage.createLead({
-          name: data.name,
-          email: data.email,
-          phone: data.phone || null,
-          consentedAt: data.lgpdConsent ? new Date() : null,
-        });
-      }
+      // Get existing lead or prepare new lead data
+      const existingLead = await storage.getLeadByEmail(data.email);
+      const leadData = existingLead || {
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        consentedAt: data.lgpdConsent ? new Date() : null,
+      };
 
-      const companySnapshot = await storage.createCompanySnapshot({
-        cnpj: data.cnpj,
-        razaoSocial: data.razaoSocial,
-        segmento: data.segmento,
-        fpasCode: data.fpasCode,
-        isDesonerada: data.isDesonerada,
-        colaboradores: data.colaboradores,
+      // Create simulation, snapshot, and lead (if needed) atomically in a transaction
+      const { lead, companySnapshot, simulation } = await storage.createSimulationWithSnapshot({
+        lead: leadData,
+        companySnapshot: {
+          cnpj: data.cnpj,
+          razaoSocial: data.razaoSocial,
+          segmento: data.segmento,
+          fpasCode: data.fpasCode,
+          isDesonerada: data.isDesonerada,
+          colaboradores: data.colaboradores,
+        },
+        simulation: {
+          salarioMinimo: params.salarioMinimo,
+          aliquotaFpas: calculationResult.aliquotaFpas,
+          aliquotaRat: calculationResult.aliquotaRat,
+          mesesProjetados: calculationResult.mesesProjetados,
+          baseFolha: calculationResult.baseFolha,
+          impostoMensalEstimado: calculationResult.impostoMensalEstimado,
+          totalProjetado: calculationResult.totalProjetado,
+          creditoEstimadoTotal: calculationResult.creditoEstimadoTotal,
+          creditoVerde: calculationResult.creditoVerde,
+          creditoAmarelo: calculationResult.creditoAmarelo,
+          creditoVermelho: calculationResult.creditoVermelho,
+        },
       });
 
-      const simulation = await storage.createSimulation({
-        leadId: lead.id,
-        companySnapshotId: companySnapshot.id,
-        salarioMinimo: params.salarioMinimo,
-        aliquotaFpas: calculationResult.aliquotaFpas,
-        aliquotaRat: calculationResult.aliquotaRat,
-        mesesProjetados: calculationResult.mesesProjetados,
-        baseFolha: calculationResult.baseFolha,
-        impostoMensalEstimado: calculationResult.impostoMensalEstimado,
-        totalProjetado: calculationResult.totalProjetado,
-        creditoEstimadoTotal: calculationResult.creditoEstimadoTotal,
-        creditoVerde: calculationResult.creditoVerde,
-        creditoAmarelo: calculationResult.creditoAmarelo,
-        creditoVermelho: calculationResult.creditoVermelho,
+      enqueueJob("lead-webhook", async () => {
+        await sendLeadWebhook({ lead, simulation, companySnapshot });
       });
 
-      sendLeadWebhook({ lead, simulation, companySnapshot }).catch((err) => {
-        console.error("[Webhook] Failed to send webhook:", err);
+      enqueueJob("pdf-email", async () => {
+        try {
+          const pdfBuffer = await generatePDF(simulation, companySnapshot, lead, params);
+          await sendPdfEmail({ lead, simulation, companySnapshot, pdfBuffer });
+        } catch (pdfError) {
+          console.error("[PDF] Failed to generate PDF for email:", pdfError);
+        }
       });
-
-      try {
-        const pdfBuffer = await generatePDF(simulation, companySnapshot, lead, params);
-        sendPdfEmail({ lead, simulation, companySnapshot, pdfBuffer }).catch((err) => {
-          console.error("[Email] Failed to send email:", err);
-        });
-      } catch (pdfError) {
-        console.error("[PDF] Failed to generate PDF for email:", pdfError);
-      }
 
       res.json({
         simulation,
@@ -300,16 +329,60 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/azure/login", startAzureLogin);
+
+  app.get("/api/admin/azure/callback", handleAzureCallback);
+
   app.post("/api/admin/login", (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
       cleanupExpiredTokens();
       const token = generateSecureToken();
       activeTokens.set(token, { createdAt: Date.now() });
+      req.session.admin = {
+        method: "password",
+        expiresAt: Date.now() + TOKEN_EXPIRY_MS,
+      };
       res.json({ token, success: true });
     } else {
       res.status(401).json({ error: "Invalid password" });
     }
+  });
+
+  app.get("/api/public/azure-config", (req, res) => {
+    res.json({ azureConfigured: isAzureConfigured() });
+  });
+
+  app.get("/api/admin/me", (req, res) => {
+    const sessionAdmin = getSessionAdmin(req);
+    if (sessionAdmin) {
+      return res.json({
+        authenticated: true,
+        method: sessionAdmin.method,
+        name: sessionAdmin.name,
+        email: sessionAdmin.email,
+      });
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ authenticated: false });
+    }
+
+    const token = authHeader.substring(7);
+    const tokenData = activeTokens.get(token);
+    if (!tokenData || Date.now() - tokenData.createdAt > TOKEN_EXPIRY_MS) {
+      activeTokens.delete(token);
+      return res.status(401).json({ authenticated: false });
+    }
+
+    return res.json({ authenticated: true, method: "password" });
+  });
+
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.admin = undefined;
+    const logoutUrl = buildAzureLogoutUrl(req.body?.returnTo);
+    res.json({ success: true, logoutUrl });
   });
 
   app.get("/api/admin/params", adminAuth, async (req, res) => {
@@ -329,6 +402,16 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching params:", error);
       res.status(500).json({ error: "Failed to fetch params" });
+    }
+  });
+
+  app.get("/api/admin/cnpj-cache-stats", adminAuth, (req, res) => {
+    try {
+      const stats = cnpjCache.getStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching cache stats:", error);
+      res.status(500).json({ error: "Failed to fetch cache stats" });
     }
   });
 
@@ -398,11 +481,14 @@ export async function registerRoutes(
 
   app.put("/api/admin/fpas/:id", adminAuth, async (req, res) => {
     try {
+      const { id } = req.params;
+      if (Array.isArray(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
       const validation = insertFpasSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
       }
-      const { id } = req.params;
       const fpasData = await storage.updateFpas(id, validation.data);
       res.json(fpasData);
     } catch (error) {
@@ -414,6 +500,9 @@ export async function registerRoutes(
   app.delete("/api/admin/fpas/:id", adminAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      if (Array.isArray(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
       await storage.deleteFpas(id);
       res.json({ success: true });
     } catch (error) {

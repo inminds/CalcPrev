@@ -41,6 +41,11 @@ export interface IStorage {
   createSimulation(simulation: InsertSimulation): Promise<Simulation>;
   getSimulation(id: string): Promise<Simulation | undefined>;
   getSimulationsWithDetails(id: string): Promise<{ simulation: Simulation; companySnapshot: CompanySnapshot; lead: Lead } | undefined>;
+  createSimulationWithSnapshot(params: {
+    lead: InsertLead | Lead;
+    companySnapshot: InsertCompanySnapshot;
+    simulation: Omit<InsertSimulation, 'leadId' | 'companySnapshotId'>;
+  }): Promise<{ lead: Lead; companySnapshot: CompanySnapshot; simulation: Simulation }>;
 
   // Calculation Params
   getCalculationParams(): Promise<CalculationParams | undefined>;
@@ -246,6 +251,36 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(appSettings).values(settings).returning();
       return created;
     }
+  }
+
+  // Transactional simulation creation
+  async createSimulationWithSnapshot(params: {
+    lead: InsertLead | Lead;
+    companySnapshot: InsertCompanySnapshot;
+    simulation: Omit<InsertSimulation, 'leadId' | 'companySnapshotId'>;
+  }): Promise<{ lead: Lead; companySnapshot: CompanySnapshot; simulation: Simulation }> {
+    return await db.transaction(async (tx) => {
+      // Get or create lead
+      let lead: Lead;
+      if ('id' in params.lead) {
+        lead = params.lead;
+      } else {
+        const [createdLead] = await tx.insert(leads).values(params.lead).returning();
+        lead = createdLead;
+      }
+
+      // Create company snapshot
+      const [companySnapshot] = await tx.insert(companySnapshots).values(params.companySnapshot).returning();
+
+      // Create simulation
+      const [simulation] = await tx.insert(simulations).values({
+        ...params.simulation,
+        leadId: lead.id,
+        companySnapshotId: companySnapshot.id,
+      }).returning();
+
+      return { lead, companySnapshot, simulation };
+    });
   }
 }
 
