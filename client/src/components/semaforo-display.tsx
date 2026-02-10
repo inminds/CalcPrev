@@ -84,13 +84,12 @@ function SpeedometerGauge({
     return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
 
-  const needleRad = (animatedAngle * Math.PI) / 180;
   const needleLength = radius - 18;
-  const needleTipX = cx + needleLength * Math.cos(needleRad);
-  const needleTipY = cy + needleLength * Math.sin(needleRad);
 
   const currentSweep = isVisible ? percentage * totalSweep : 0;
   const filledEndAngle = startAngle + currentSweep;
+
+  const needleRotation = animatedAngle + 90;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -132,26 +131,32 @@ function SpeedometerGauge({
               strokeWidth="8"
               strokeLinecap="round"
               filter={`url(#glow-${label})`}
-              style={{ transition: "all 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
             />
           )}
 
           <g className="text-muted-foreground">{tickMarks}</g>
 
-          <g style={{ transition: "all 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}>
+          <g
+            style={{
+              transform: `rotate(${needleRotation}deg)`,
+              transformOrigin: `${cx}px ${cy}px`,
+              transition: "transform 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            }}
+          >
             <line
               x1={cx}
               y1={cy}
-              x2={needleTipX}
-              y2={needleTipY}
+              x2={cx}
+              y2={cy - needleLength}
               stroke={color}
               strokeWidth="2.5"
               strokeLinecap="round"
               filter={`url(#glow-${label})`}
             />
-            <circle cx={cx} cy={cy} r="6" fill={color} />
-            <circle cx={cx} cy={cy} r="3" fill="white" opacity="0.8" />
           </g>
+
+          <circle cx={cx} cy={cy} r="6" fill={color} />
+          <circle cx={cx} cy={cy} r="3" fill="white" opacity="0.8" />
 
           <circle
             cx={cx}
