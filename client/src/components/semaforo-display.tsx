@@ -1,5 +1,5 @@
 import { formatCurrency, formatPercentage } from "@/lib/formatters";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SemaforoDisplayProps {
   creditoVerde: string | number;
@@ -17,6 +17,7 @@ function SpeedometerGauge({
   color,
   glowColor,
   delay,
+  isVisible,
 }: {
   value: string | number;
   percentage: number;
@@ -24,16 +25,21 @@ function SpeedometerGauge({
   color: string;
   glowColor: string;
   delay: number;
+  isVisible: boolean;
 }) {
   const [animatedAngle, setAnimatedAngle] = useState(-135);
   const targetAngle = -135 + percentage * 270;
 
   useEffect(() => {
+    if (!isVisible) {
+      setAnimatedAngle(-135);
+      return;
+    }
     const timer = setTimeout(() => {
       setAnimatedAngle(targetAngle);
-    }, 200 + delay);
+    }, 300 + delay);
     return () => clearTimeout(timer);
-  }, [targetAngle, delay]);
+  }, [isVisible, targetAngle, delay]);
 
   const cx = 100;
   const cy = 100;
@@ -59,7 +65,7 @@ function SpeedometerGauge({
         y1={cy + innerR * Math.sin(rad)}
         x2={cx + outerR * Math.cos(rad)}
         y2={cy + outerR * Math.sin(rad)}
-        stroke={isMajor ? "currentColor" : "currentColor"}
+        stroke="currentColor"
         strokeOpacity={isMajor ? 0.6 : 0.25}
         strokeWidth={isMajor ? 2 : 1}
         strokeLinecap="round"
@@ -83,7 +89,8 @@ function SpeedometerGauge({
   const needleTipX = cx + needleLength * Math.cos(needleRad);
   const needleTipY = cy + needleLength * Math.sin(needleRad);
 
-  const filledEndAngle = startAngle + percentage * totalSweep;
+  const currentSweep = isVisible ? percentage * totalSweep : 0;
+  const filledEndAngle = startAngle + currentSweep;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -117,7 +124,7 @@ function SpeedometerGauge({
             strokeLinecap="round"
           />
 
-          {percentage > 0 && (
+          {currentSweep > 0 && (
             <path
               d={arcPath(startAngle, filledEndAngle, radius)}
               fill="none"
@@ -125,13 +132,13 @@ function SpeedometerGauge({
               strokeWidth="8"
               strokeLinecap="round"
               filter={`url(#glow-${label})`}
-              style={{ transition: "all 1.5s ease-out" }}
+              style={{ transition: "all 2.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
             />
           )}
 
           <g className="text-muted-foreground">{tickMarks}</g>
 
-          <g style={{ transition: "all 1.5s ease-out" }}>
+          <g style={{ transition: "all 2.5s cubic-bezier(0.16, 1, 0.3, 1)" }}>
             <line
               x1={cx}
               y1={cy}
@@ -161,7 +168,7 @@ function SpeedometerGauge({
           className="absolute inset-0 rounded-full opacity-20 blur-xl pointer-events-none"
           style={{
             background: `radial-gradient(circle at 50% 70%, ${glowColor}, transparent 70%)`,
-            animation: `rpm-pulse 2s ease-in-out infinite`,
+            animation: isVisible ? `rpm-pulse 2s ease-in-out infinite` : "none",
             animationDelay: `${delay}ms`,
           }}
         />
@@ -187,12 +194,32 @@ export function SemaforoDisplay({
   percentualAmarelo = 0.35,
   percentualVermelho = 0.50,
 }: SemaforoDisplayProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const clampPercent = (value?: number) => Math.max(0, Math.min(1, Number(value) || 0));
 
   const gauges = [
     {
       key: "verde",
-      label: "Baixo Risco",
+      label: "Verde",
       value: creditoVerde,
       percentage: clampPercent(percentualVerde),
       color: "#10b981",
@@ -200,7 +227,7 @@ export function SemaforoDisplay({
     },
     {
       key: "amarelo",
-      label: "Médio Risco",
+      label: "Amarelo",
       value: creditoAmarelo,
       percentage: clampPercent(percentualAmarelo),
       color: "#f59e0b",
@@ -208,7 +235,7 @@ export function SemaforoDisplay({
     },
     {
       key: "vermelho",
-      label: "Alto Risco",
+      label: "Vermelho",
       value: creditoVermelho,
       percentage: clampPercent(percentualVermelho),
       color: "#ef4444",
@@ -217,7 +244,7 @@ export function SemaforoDisplay({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" ref={containerRef}>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {gauges.map((gauge, index) => (
           <div
@@ -239,7 +266,8 @@ export function SemaforoDisplay({
               label={gauge.key}
               color={gauge.color}
               glowColor={gauge.glowColor}
-              delay={index * 300}
+              delay={index * 400}
+              isVisible={isVisible}
             />
           </div>
         ))}
