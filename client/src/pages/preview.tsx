@@ -82,7 +82,7 @@ export default function PreviewPage() {
               <Calculator className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">Machado Schütz</h1>
+              <h1 className="font-bold text-lg">Machado Schutz</h1>
               <p className="text-sm opacity-90">Calculadora Previdenciária</p>
             </div>
           </div>
@@ -456,7 +456,7 @@ export default function PreviewPage() {
       {/* Footer */}
       <footer className="msh-header text-white py-6 px-6">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="font-medium">Machado Schütz Advogados - Calculadora Previdenciária V1</p>
+          <p className="font-medium">Machado Schutz Advogados e Associados - Calculadora Previdenciária V1</p>
           <p className="text-sm opacity-80 mt-2">
             Os cálculos apresentados têm caráter estimativo e não vinculante.
           </p>

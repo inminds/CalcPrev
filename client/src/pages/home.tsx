@@ -35,12 +35,12 @@ export default function Home() {
             <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden">
               <img
                 src="/logo-light.png"
-                alt="Machado Schütz"
+                alt="Machado Schutz"
                 className="h-9 w-9 object-contain"
               />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight text-primary-foreground">Machado Schütz</h1>
+              <h1 className="font-bold text-lg leading-tight text-primary-foreground">Machado Schutz</h1>
               <p className="text-xs text-primary-foreground/80">Calculadora Previdenciária</p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function Home() {
       <footer className="bg-primary py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-primary-foreground">
           <p className="font-medium mb-2">
-            Machado Schütz Advogados - Calculadora Previdenciária V1
+            Machado Schutz Advogados e Associados - Calculadora Previdenciária V1
           </p>
           <p className="opacity-80">
             Os cálculos apresentados têm caráter estimativo e não vinculante.

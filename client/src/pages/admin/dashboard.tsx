@@ -1047,7 +1047,7 @@ export default function AdminDashboard() {
                                 <FormControl>
                                   <Input
                                     {...field}
-                                    placeholder="Machado Schütz Advogados"
+                                    placeholder="Machado Schutz Advogados e Associados"
                                     data-testid="input-email-from-name"
                                   />
                                 </FormControl>

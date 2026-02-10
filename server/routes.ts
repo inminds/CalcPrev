@@ -540,9 +540,9 @@ export async function registerRoutes(
         settings = await storage.upsertEmailSettings({
           enabled: false,
           fromEmail: "noreply@msh.adv.br",
-          fromName: "Machado Schütz Advogados",
+          fromName: "Machado Schutz Advogados e Associados",
           subject: "Seu Diagnóstico Previdenciário",
-          bodyTemplate: "Olá {{name}},\n\nSegue em anexo o seu diagnóstico previdenciário.\n\nAtenciosamente,\nMachado Schütz Advogados",
+          bodyTemplate: "Olá {{name}},\n\nSegue em anexo o seu diagnóstico previdenciário.\n\nAtenciosamente,\nMachado Schutz Advogados e Associados",
         });
       }
       res.json(settings);

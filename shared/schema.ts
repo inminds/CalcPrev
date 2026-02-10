@@ -87,9 +87,9 @@ export const emailSettings = pgTable("email_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   enabled: boolean("enabled").notNull().default(false),
   fromEmail: text("from_email").notNull().default("noreply@msh.adv.br"),
-  fromName: text("from_name").notNull().default("Machado Schütz Advogados"),
+  fromName: text("from_name").notNull().default("Machado Schutz Advogados e Associados"),
   subject: text("subject").notNull().default("Seu Diagnóstico Previdenciário"),
-  bodyTemplate: text("body_template").notNull().default("Olá {{name}},\n\nSegue em anexo o seu diagnóstico previdenciário.\n\nAtenciosamente,\nMachado Schütz Advogados"),
+  bodyTemplate: text("body_template").notNull().default("Olá {{name}},\n\nSegue em anexo o seu diagnóstico previdenciário.\n\nAtenciosamente,\nMachado Schutz Advogados e Associados"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

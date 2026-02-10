@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE - Machado Schütz Brand Colors */
+/* LIGHT MODE - Machado Schutz Brand Colors */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -14,7 +14,7 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Machado Schütz Brand Colors */
+  /* Machado Schutz Brand Colors */
   /* Primary: #1F5C4A - Verde Institucional */
   /* Secondary: #163F34 - Verde Escuro (hover) */
   /* Text: #1C1C1C - Preto Grafite */
@@ -132,7 +132,7 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* Machado Schütz Dark Mode */
+  /* Machado Schutz Dark Mode */
   --background: 162 30% 8%;
   --foreground: 0 0% 98%;
   --border: 162 15% 20%;
