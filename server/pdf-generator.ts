@@ -54,6 +54,141 @@ function drawFieldRow(doc: PDFKit.PDFDocument, label: string, value: string, x: 
   return Math.max(14, textHeight + 4);
 }
 
+function toRad(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+function drawThickArc(
+  doc: PDFKit.PDFDocument,
+  cx: number,
+  cy: number,
+  outerR: number,
+  innerR: number,
+  startDeg: number,
+  endDeg: number,
+  color: string
+) {
+  const step = 2;
+  const outerPts: [number, number][] = [];
+  const innerPts: [number, number][] = [];
+
+  if (startDeg > endDeg) {
+    for (let d = startDeg; d >= endDeg; d -= step) {
+      const r = toRad(d);
+      outerPts.push([cx + outerR * Math.cos(r), cy - outerR * Math.sin(r)]);
+      innerPts.push([cx + innerR * Math.cos(r), cy - innerR * Math.sin(r)]);
+    }
+    const rEnd = toRad(endDeg);
+    outerPts.push([cx + outerR * Math.cos(rEnd), cy - outerR * Math.sin(rEnd)]);
+    innerPts.push([cx + innerR * Math.cos(rEnd), cy - innerR * Math.sin(rEnd)]);
+  } else {
+    for (let d = startDeg; d <= endDeg; d += step) {
+      const r = toRad(d);
+      outerPts.push([cx + outerR * Math.cos(r), cy - outerR * Math.sin(r)]);
+      innerPts.push([cx + innerR * Math.cos(r), cy - innerR * Math.sin(r)]);
+    }
+    const rEnd = toRad(endDeg);
+    outerPts.push([cx + outerR * Math.cos(rEnd), cy - outerR * Math.sin(rEnd)]);
+    innerPts.push([cx + innerR * Math.cos(rEnd), cy - innerR * Math.sin(rEnd)]);
+  }
+
+  if (outerPts.length < 2) return;
+
+  doc.save();
+  doc.moveTo(outerPts[0][0], outerPts[0][1]);
+  for (let i = 1; i < outerPts.length; i++) {
+    doc.lineTo(outerPts[i][0], outerPts[i][1]);
+  }
+  for (let i = innerPts.length - 1; i >= 0; i--) {
+    doc.lineTo(innerPts[i][0], innerPts[i][1]);
+  }
+  doc.closePath();
+  doc.fillColor(color).fill();
+  doc.restore();
+}
+
+function drawSpeedometer(
+  doc: PDFKit.PDFDocument,
+  cx: number,
+  cy: number,
+  radius: number,
+  percentage: number,
+  color: string,
+  label: string,
+  valueText: string,
+  percentText: string
+) {
+  const startAngle = 225;
+  const totalSweep = 270;
+  const endAngle = startAngle - totalSweep;
+  const arcWidth = 7;
+  const outerR = radius;
+  const innerR = radius - arcWidth;
+
+  drawThickArc(doc, cx, cy, outerR, innerR, startAngle, endAngle, "#E0E0E0");
+
+  const filledEndAngle = startAngle - (totalSweep * percentage);
+  if (percentage > 0.01) {
+    drawThickArc(doc, cx, cy, outerR, innerR, startAngle, filledEndAngle, color);
+  }
+
+  const numTicks = 11;
+  for (let i = 0; i <= numTicks; i++) {
+    const tickAngle = startAngle - (totalSweep * i) / numTicks;
+    const tickRad = toRad(tickAngle);
+    const isMajor = i % 5 === 0;
+    const tickOuterR = outerR + 1;
+    const tickInnerR = isMajor ? outerR - arcWidth - 4 : outerR - arcWidth - 2;
+
+    const x1 = cx + tickOuterR * Math.cos(tickRad);
+    const y1 = cy - tickOuterR * Math.sin(tickRad);
+    const x2 = cx + tickInnerR * Math.cos(tickRad);
+    const y2 = cy - tickInnerR * Math.sin(tickRad);
+
+    doc.save();
+    doc.strokeColor("#B0B0B0").lineWidth(isMajor ? 1 : 0.5);
+    doc.moveTo(x1, y1).lineTo(x2, y2).stroke();
+    doc.restore();
+  }
+
+  const needleAngle = startAngle - (totalSweep * percentage);
+  const needleRad = toRad(needleAngle);
+  const needleLen = innerR - 3;
+  const needleTipX = cx + needleLen * Math.cos(needleRad);
+  const needleTipY = cy - needleLen * Math.sin(needleRad);
+
+  const baseSize = 2;
+  const perpRad = needleRad + Math.PI / 2;
+  const bx1 = cx + baseSize * Math.cos(perpRad);
+  const by1 = cy - baseSize * Math.sin(perpRad);
+  const bx2 = cx - baseSize * Math.cos(perpRad);
+  const by2 = cy + baseSize * Math.sin(perpRad);
+
+  doc.save();
+  doc.moveTo(needleTipX, needleTipY);
+  doc.lineTo(bx1, by1);
+  doc.lineTo(bx2, by2);
+  doc.closePath();
+  doc.fillColor(MSH_TEXT).fill();
+  doc.restore();
+
+  doc.save();
+  doc.circle(cx, cy, 3).fillColor(color).fill();
+  doc.restore();
+
+  const labelDot = 4;
+  const labelDotX = cx - 20;
+  const labelDotY = cy - radius - 10;
+  doc.save();
+  doc.circle(labelDotX, labelDotY + 3, labelDot / 2).fillColor(color).fill();
+  doc.restore();
+  doc.fillColor(MSH_TEXT).fontSize(8).font("Helvetica-Bold").text(label, labelDotX + 6, labelDotY, { width: 50 });
+
+  const textY = cy + 10;
+  doc.fillColor(MSH_TEXT).fontSize(11).font("Helvetica-Bold").text(valueText, cx - 55, textY, { width: 110, align: "center" });
+  doc.fillColor(MSH_TEXT_SECONDARY).fontSize(9).font("Helvetica").text(percentText, cx - 40, textY + 16, { width: 80, align: "center" });
+}
+
 export function generatePDF(
   simulation: Simulation,
   companySnapshot: CompanySnapshot,
@@ -196,14 +331,15 @@ export function generatePDF(
 
       y += creditBoxH + 18;
 
-      // === DISTRIBUIÇÃO ===
+      // === DISTRIBUIÇÃO COM VELOCÍMETROS ===
       doc.rect(margin - 4, y - 2, 4, 16).fill(MSH_GREEN);
       doc.fillColor(MSH_GREEN).fontSize(12).font("Helvetica-Bold").text("Distribuição por Nível de Risco", margin + 8, y);
 
       y += 24;
 
-      const boxWidth = (contentWidth - 20) / 3;
-      const boxHeight = 68;
+      const gaugeSpacing = contentWidth / 3;
+      const gaugeRadius = 42;
+      const gaugeCenterY = y + gaugeRadius + 12;
 
       const distribution = [
         { label: "Verde", color: "#10b981", value: simulation.creditoVerde, percent: params.percentualVerde },
@@ -212,17 +348,23 @@ export function generatePDF(
       ];
 
       distribution.forEach((item, idx) => {
-        const offsetX = margin + idx * (boxWidth + 10);
+        const gaugeCenterX = margin + gaugeSpacing * idx + gaugeSpacing / 2;
+        const pct = typeof item.percent === "string" ? parseFloat(item.percent) : item.percent;
 
-        doc.rect(offsetX, y, boxWidth, 3).fill(item.color);
-        doc.rect(offsetX, y + 3, boxWidth, boxHeight - 3).fill(MSH_LIGHT_BG);
-
-        doc.fillColor(MSH_TEXT).fontSize(8).font("Helvetica-Bold").text(item.label, offsetX + 10, y + 12, { width: boxWidth - 20 });
-        doc.fillColor(MSH_TEXT).fontSize(13).font("Helvetica-Bold").text(formatCurrency(item.value), offsetX + 10, y + 26, { width: boxWidth - 20 });
-        doc.fillColor(MSH_TEXT_SECONDARY).fontSize(9).font("Helvetica").text(formatPercentage(item.percent), offsetX + 10, y + 46, { width: boxWidth - 20 });
+        drawSpeedometer(
+          doc,
+          gaugeCenterX,
+          gaugeCenterY,
+          gaugeRadius,
+          pct,
+          item.color,
+          item.label,
+          formatCurrency(item.value),
+          formatPercentage(item.percent)
+        );
       });
 
-      y += boxHeight + 20;
+      y = gaugeCenterY + 40;
 
       // === AVISO LEGAL ===
       drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
