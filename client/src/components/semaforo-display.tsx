@@ -237,17 +237,23 @@ export function SemaforoDisplay({
     const el = containerRef.current;
     if (!el) return;
 
+    let timer: ReturnType<typeof setTimeout>;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          timer = setTimeout(() => setIsVisible(true), 200);
+          observer.disconnect();
         }
       },
-      { threshold: 0.3 }
+      { threshold: [0.5, 0.75, 1.0] }
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, []);
 
   const clampPercent = (value?: number) => Math.max(0, Math.min(1, Number(value) || 0));

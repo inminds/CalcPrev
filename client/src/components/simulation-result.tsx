@@ -96,8 +96,8 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               </div>
               <div>
                 <span className="text-muted-foreground">{baseLabel}:</span>
-                <span className="ml-2 font-medium" data-testid="text-colaboradores">
-                  {companySnapshot.baseInputType === "folha" ? baseValue : companySnapshot.colaboradores}
+                <span className="ml-2 font-medium" data-testid="text-base-calculo">
+                  {baseValue}
                 </span>
               </div>
               <div>
