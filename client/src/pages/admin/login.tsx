@@ -88,7 +88,7 @@ export default function AdminLogin() {
   };
 
   const handleAzureLogin = () => {
-    window.location.href = "/api/admin/azure/login";
+    window.location.href = "/admin/auth/login";
   };
 
   return (

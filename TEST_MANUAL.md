@@ -219,10 +219,10 @@ Para testar Azure SSO localmente:
 ```env
 AZURE_CLIENT_ID=458f58e0-0317-459e-b5c0-4c898a63e55a
 AZURE_TENANT_ID=204e3e4b-6b2f-41d3-b97d-549cbaaff526
-AZURE_CLIENT_SECRET=<sua-secret-aqui>
-AZURE_REDIRECT_URI=http://localhost:5000/api/admin/azure/callback
+AZURE_CLIENT_SECRET=kp48Q~kKoh4pw7CPG9SuLep6.K74CSUk8rZia.V
+AZURE_REDIRECT_URI=http://localhost:5000/admin/auth
 AZURE_ADMIN_GROUP_ID=abe59474-f68f-4eaf-9512-a0565827ea01
-SESSION_SECRET=seu-secret-session-aleatorio
+SESSION_SECRET=6f9f6f8e-7b6a-4c58-9b6b-4b3d9b7a9f2a
 ```
 
 ---

@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalculatorForm } from "@/components/calculator-form";
 import { SimulationResultDisplay } from "@/components/simulation-result";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { SimulationResult } from "@shared/schema";
-import { Calculator, Shield, Clock, FileText } from "lucide-react";
+import { Shield, Clock, FileText } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 
 export default function Home() {
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const { theme } = useTheme();
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setResolvedTheme(isDark ? "dark" : "light");
+  }, [theme]);
 
   const handleSimulationSuccess = (result: SimulationResult) => {
     setSimulationResult(result);
@@ -24,8 +32,12 @@ export default function Home() {
       <header className="bg-primary sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
-              <Calculator className="h-6 w-6 text-primary-foreground" />
+            <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden">
+              <img
+                src="/logo-light.png"
+                alt="Machado Schütz"
+                className="h-9 w-9 object-contain"
+              />
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight text-primary-foreground">Machado Schütz</h1>

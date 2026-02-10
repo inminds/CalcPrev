@@ -329,9 +329,10 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/azure/login", startAzureLogin);
+  // Azure AD SSO (padrão unificado em /admin/auth)
+  app.get("/admin/auth/login", startAzureLogin);
 
-  app.get("/api/admin/azure/callback", handleAzureCallback);
+  app.get("/admin/auth", handleAzureCallback);
 
   app.post("/api/admin/login", (req, res) => {
     const { password } = req.body;
