@@ -1,4 +1,5 @@
 import { formatCurrency, formatPercentage } from "@/lib/formatters";
+import { useEffect, useState } from "react";
 
 interface SemaforoDisplayProps {
   creditoVerde: string | number;
@@ -7,7 +8,175 @@ interface SemaforoDisplayProps {
   percentualVerde?: number;
   percentualAmarelo?: number;
   percentualVermelho?: number;
-  size?: "sm" | "md" | "lg";
+}
+
+function SpeedometerGauge({
+  value,
+  percentage,
+  label,
+  color,
+  glowColor,
+  delay,
+}: {
+  value: string | number;
+  percentage: number;
+  label: string;
+  color: string;
+  glowColor: string;
+  delay: number;
+}) {
+  const [animatedAngle, setAnimatedAngle] = useState(-135);
+  const targetAngle = -135 + percentage * 270;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedAngle(targetAngle);
+    }, 200 + delay);
+    return () => clearTimeout(timer);
+  }, [targetAngle, delay]);
+
+  const cx = 100;
+  const cy = 100;
+  const radius = 72;
+  const startAngle = -135;
+  const endAngle = 135;
+  const totalSweep = endAngle - startAngle;
+
+  const tickMarks = [];
+  const numMajorTicks = 11;
+  const numMinorTicks = 50;
+
+  for (let i = 0; i <= numMinorTicks; i++) {
+    const angle = startAngle + (i / numMinorTicks) * totalSweep;
+    const rad = (angle * Math.PI) / 180;
+    const isMajor = i % (numMinorTicks / (numMajorTicks - 1)) === 0;
+    const innerR = isMajor ? radius - 12 : radius - 7;
+    const outerR = radius - 2;
+    tickMarks.push(
+      <line
+        key={`tick-${i}`}
+        x1={cx + innerR * Math.cos(rad)}
+        y1={cy + innerR * Math.sin(rad)}
+        x2={cx + outerR * Math.cos(rad)}
+        y2={cy + outerR * Math.sin(rad)}
+        stroke={isMajor ? "currentColor" : "currentColor"}
+        strokeOpacity={isMajor ? 0.6 : 0.25}
+        strokeWidth={isMajor ? 2 : 1}
+        strokeLinecap="round"
+      />
+    );
+  }
+
+  const arcPath = (startA: number, endA: number, r: number) => {
+    const s = (startA * Math.PI) / 180;
+    const e = (endA * Math.PI) / 180;
+    const x1 = cx + r * Math.cos(s);
+    const y1 = cy + r * Math.sin(s);
+    const x2 = cx + r * Math.cos(e);
+    const y2 = cy + r * Math.sin(e);
+    const largeArc = endA - startA > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
+  };
+
+  const needleRad = (animatedAngle * Math.PI) / 180;
+  const needleLength = radius - 18;
+  const needleTipX = cx + needleLength * Math.cos(needleRad);
+  const needleTipY = cy + needleLength * Math.sin(needleRad);
+
+  const filledEndAngle = startAngle + percentage * totalSweep;
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative">
+        <svg
+          width="200"
+          height="140"
+          viewBox="0 0 200 140"
+          className="drop-shadow-lg"
+        >
+          <defs>
+            <filter id={`glow-${label}`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <linearGradient id={`grad-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={color} stopOpacity="1" />
+              <stop offset="100%" stopColor={glowColor} stopOpacity="0.8" />
+            </linearGradient>
+          </defs>
+
+          <path
+            d={arcPath(startAngle, endAngle, radius)}
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.1"
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+
+          {percentage > 0 && (
+            <path
+              d={arcPath(startAngle, filledEndAngle, radius)}
+              fill="none"
+              stroke={`url(#grad-${label})`}
+              strokeWidth="8"
+              strokeLinecap="round"
+              filter={`url(#glow-${label})`}
+              style={{ transition: "all 1.5s ease-out" }}
+            />
+          )}
+
+          <g className="text-muted-foreground">{tickMarks}</g>
+
+          <g style={{ transition: "all 1.5s ease-out" }}>
+            <line
+              x1={cx}
+              y1={cy}
+              x2={needleTipX}
+              y2={needleTipY}
+              stroke={color}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              filter={`url(#glow-${label})`}
+            />
+            <circle cx={cx} cy={cy} r="6" fill={color} />
+            <circle cx={cx} cy={cy} r="3" fill="white" opacity="0.8" />
+          </g>
+
+          <circle
+            cx={cx}
+            cy={cy}
+            r={radius + 4}
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.08"
+            strokeWidth="1"
+          />
+        </svg>
+
+        <div
+          className="absolute inset-0 rounded-full opacity-20 blur-xl pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at 50% 70%, ${glowColor}, transparent 70%)`,
+            animation: `rpm-pulse 2s ease-in-out infinite`,
+            animationDelay: `${delay}ms`,
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col items-center gap-1 text-center">
+        <span className="text-2xl font-bold tracking-tight" data-testid={`value-${label}`}>
+          {formatCurrency(value)}
+        </span>
+        <span className="text-lg font-semibold opacity-80" data-testid={`percent-${label}`}>
+          {formatPercentage(percentage)}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export function SemaforoDisplay({
@@ -17,102 +186,71 @@ export function SemaforoDisplay({
   percentualVerde = 0.15,
   percentualAmarelo = 0.35,
   percentualVermelho = 0.50,
-  size = "md",
 }: SemaforoDisplayProps) {
-  const sizeClasses = {
-    sm: "p-3 gap-2",
-    md: "p-4 gap-3",
-    lg: "p-6 gap-4",
-  };
-
-  const textSizes = {
-    sm: { value: "text-sm font-semibold", percent: "text-xs" },
-    md: { value: "text-lg font-bold", percent: "text-sm" },
-    lg: { value: "text-2xl font-bold", percent: "text-base" },
-  };
-
   const clampPercent = (value?: number) => Math.max(0, Math.min(1, Number(value) || 0));
 
-  const items = [
+  const gauges = [
     {
       key: "verde",
       label: "Baixo Risco",
       value: creditoVerde,
       percentage: clampPercent(percentualVerde),
-      bgColor: "bg-emerald-500 dark:bg-emerald-600",
-      textColor: "text-white",
+      color: "#10b981",
+      glowColor: "#34d399",
     },
     {
       key: "amarelo",
       label: "Médio Risco",
       value: creditoAmarelo,
       percentage: clampPercent(percentualAmarelo),
-      bgColor: "bg-amber-500 dark:bg-amber-600",
-      textColor: "text-white",
+      color: "#f59e0b",
+      glowColor: "#fbbf24",
     },
     {
       key: "vermelho",
       label: "Alto Risco",
       value: creditoVermelho,
       percentage: clampPercent(percentualVermelho),
-      bgColor: "bg-red-500 dark:bg-red-600",
-      textColor: "text-white",
+      color: "#ef4444",
+      glowColor: "#f87171",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {items.map((item, index) => (
-        <div
-          key={index}
-          className={`${item.bgColor} ${item.textColor} rounded-lg ${sizeClasses[size]} flex flex-col shadow-md transition-transform hover:scale-[1.02] relative overflow-hidden`}
-          data-testid={`semaforo-${item.key}`}
-        >
-          <div className="pointer-events-none absolute inset-0">
-            <div
-              className="absolute -inset-x-16 -top-1/2 h-[220%] opacity-25"
-              style={{
-                background:
-                  "linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 70%)",
-                animation: `velocity-sweep 3s ease-in-out infinite`,
-                animationDelay: `${index * 0.35}s`,
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1 relative z-10">
-            <span className={textSizes[size].value}>{formatCurrency(item.value)}</span>
-            <span className={`${textSizes[size].percent} opacity-90`}>{formatPercentage(item.percentage)}</span>
-          </div>
-
-          <div className="relative z-10 mt-3 h-2.5 rounded-full bg-white/25 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-white/90 shadow-sm transition-all duration-700 ease-out"
-              style={{ width: `${Math.round(item.percentage * 100)}%` }}
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-full border border-white/30"
-              style={{
-                animation: `needle-pulse 2.6s ease-in-out infinite`,
-                animationDelay: `${index * 0.35}s`,
-              }}
-            />
-          </div>
-
-          <div className="relative z-10 mt-4 flex justify-center">
-            <div className="relative h-10 w-24 rounded-b-full rounded-t-[999px] border border-white/25 bg-white/10 overflow-hidden">
-              <div className="absolute inset-x-3 bottom-2 h-[6px] rounded-full bg-white/20" />
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {gauges.map((gauge, index) => (
+          <div
+            key={gauge.key}
+            className="flex flex-col items-center rounded-lg p-4 bg-muted/30 dark:bg-muted/10"
+            data-testid={`semaforo-${gauge.key}`}
+          >
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <div
-                className="absolute left-1/2 bottom-[6px] h-8 w-[2px] bg-white shadow-sm origin-bottom transition-transform duration-700 ease-out"
-                style={{ transform: `translateX(-50%) rotate(${(-60 + item.percentage * 240).toFixed(1)}deg)` }}
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: gauge.color, boxShadow: `0 0 8px ${gauge.glowColor}` }}
               />
-              <div className="absolute inset-x-0 bottom-0 h-3 bg-gradient-to-t from-black/10 to-transparent" />
+              <span className="text-sm font-medium text-muted-foreground" data-testid={`text-risk-label-${gauge.key}`}>{gauge.label}</span>
             </div>
-          </div>
 
-          <span className="sr-only">{item.label}</span>
-        </div>
-      ))}
+            <SpeedometerGauge
+              value={gauge.value}
+              percentage={gauge.percentage}
+              label={gauge.key}
+              color={gauge.color}
+              glowColor={gauge.glowColor}
+              delay={index * 300}
+            />
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes rpm-pulse {
+          0%, 100% { opacity: 0.15; transform: scale(0.95); }
+          50% { opacity: 0.3; transform: scale(1.05); }
+        }
+      `}</style>
     </div>
   );
 }

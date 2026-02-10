@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { SemaforoDisplay } from "@/components/semaforo-display";
 import { formatCurrency, formatCNPJ } from "@/lib/formatters";
-import { Download, ArrowLeft, Building2, Calculator, TrendingUp } from "lucide-react";
+import { Download, ArrowLeft, Building2, Calculator, TrendingUp, Gauge } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { SimulationResult, Fpas } from "@shared/schema";
 
@@ -169,10 +169,11 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
 
           <Separator />
 
-          {/* Semáforo de Risco */}
+          {/* Painel de Velocímetros */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 font-medium">
-              <span className="text-lg">Distribuição</span>
+            <div className="flex items-center gap-2 text-primary font-medium">
+              <Gauge className="h-5 w-5" />
+              <span className="text-lg">Painel de Distribuição</span>
             </div>
             <SemaforoDisplay
               creditoVerde={simulation.creditoVerde}
@@ -181,7 +182,6 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               percentualVerde={percentualVerde}
               percentualAmarelo={percentualAmarelo}
               percentualVermelho={percentualVermelho}
-              size="lg"
             />
           </div>
 
