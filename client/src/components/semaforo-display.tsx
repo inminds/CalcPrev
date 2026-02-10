@@ -1,5 +1,5 @@
 import { formatCurrency, formatPercentage } from "@/lib/formatters";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SemaforoDisplayProps {
   creditoVerde: string | number;
@@ -8,6 +8,43 @@ interface SemaforoDisplayProps {
   percentualVerde?: number;
   percentualAmarelo?: number;
   percentualVermelho?: number;
+}
+
+function useAnimatedValue(target: number, duration: number, active: boolean) {
+  const [current, setCurrent] = useState(0);
+  const rafRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(0);
+  const startValueRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!active) {
+      setCurrent(0);
+      return;
+    }
+
+    startValueRef.current = 0;
+    startTimeRef.current = 0;
+
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+      }
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = startValueRef.current + (target - startValueRef.current) * eased;
+      setCurrent(value);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration, active]);
+
+  return current;
 }
 
 function SpeedometerGauge({
@@ -27,19 +64,22 @@ function SpeedometerGauge({
   delay: number;
   isVisible: boolean;
 }) {
-  const [animatedAngle, setAnimatedAngle] = useState(-135);
-  const targetAngle = -135 + percentage * 270;
+  const [animationStarted, setAnimationStarted] = useState(false);
 
   useEffect(() => {
     if (!isVisible) {
-      setAnimatedAngle(-135);
+      setAnimationStarted(false);
       return;
     }
-    const timer = setTimeout(() => {
-      setAnimatedAngle(targetAngle);
-    }, 300 + delay);
+    const timer = setTimeout(() => setAnimationStarted(true), delay);
     return () => clearTimeout(timer);
-  }, [isVisible, targetAngle, delay]);
+  }, [isVisible, delay]);
+
+  const animatedPercentage = useAnimatedValue(
+    animationStarted ? percentage : 0,
+    3000,
+    animationStarted
+  );
 
   const cx = 100;
   const cy = 100;
@@ -84,12 +124,13 @@ function SpeedometerGauge({
     return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
 
+  const needleAngle = startAngle + animatedPercentage * totalSweep;
+  const needleRad = (needleAngle * Math.PI) / 180;
   const needleLength = radius - 18;
+  const needleTipX = cx + needleLength * Math.cos(needleRad);
+  const needleTipY = cy + needleLength * Math.sin(needleRad);
 
-  const currentSweep = isVisible ? percentage * totalSweep : 0;
-  const filledEndAngle = startAngle + currentSweep;
-
-  const needleRotation = animatedAngle + 90;
+  const filledEndAngle = startAngle + animatedPercentage * totalSweep;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -123,7 +164,7 @@ function SpeedometerGauge({
             strokeLinecap="round"
           />
 
-          {currentSweep > 0 && (
+          {animatedPercentage > 0.001 && (
             <path
               d={arcPath(startAngle, filledEndAngle, radius)}
               fill="none"
@@ -136,25 +177,16 @@ function SpeedometerGauge({
 
           <g className="text-muted-foreground">{tickMarks}</g>
 
-          <g
-            style={{
-              transform: `rotate(${needleRotation}deg)`,
-              transformOrigin: `${cx}px ${cy}px`,
-              transition: "transform 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-            }}
-          >
-            <line
-              x1={cx}
-              y1={cy}
-              x2={cx}
-              y2={cy - needleLength}
-              stroke={color}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              filter={`url(#glow-${label})`}
-            />
-          </g>
-
+          <line
+            x1={cx}
+            y1={cy}
+            x2={needleTipX}
+            y2={needleTipY}
+            stroke={color}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            filter={`url(#glow-${label})`}
+          />
           <circle cx={cx} cy={cy} r="6" fill={color} />
           <circle cx={cx} cy={cy} r="3" fill="white" opacity="0.8" />
 
