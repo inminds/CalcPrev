@@ -132,13 +132,13 @@ function SpeedometerGauge({
               strokeWidth="8"
               strokeLinecap="round"
               filter={`url(#glow-${label})`}
-              style={{ transition: "all 2.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
+              style={{ transition: "all 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
             />
           )}
 
           <g className="text-muted-foreground">{tickMarks}</g>
 
-          <g style={{ transition: "all 2.5s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+          <g style={{ transition: "all 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}>
             <line
               x1={cx}
               y1={cy}
