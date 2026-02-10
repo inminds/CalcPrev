@@ -1,4 +1,6 @@
 import PDFDocument from "pdfkit";
+import path from "path";
+import fs from "fs";
 import type { Simulation, CompanySnapshot, Lead, CalculationParams } from "@shared/schema";
 
 function formatCurrency(value: string | number): string {
@@ -23,6 +25,27 @@ function formatPercentage(value: string | number): string {
   return `${(numValue * 100).toFixed(0)}%`;
 }
 
+const MSH_GREEN = "#00513B";
+const MSH_BEIGE = "#D7AE81";
+const MSH_TEXT = "#1C1C1C";
+const MSH_TEXT_SECONDARY = "#4F4F4F";
+const MSH_LIGHT_BG = "#F5F0EB";
+
+function getLogoPath(): string | null {
+  const possiblePaths = [
+    path.join(process.cwd(), "client/public/logo-light.png"),
+    path.join(process.cwd(), "public/logo-light.png"),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+function drawLine(doc: PDFKit.PDFDocument, x1: number, y: number, x2: number, color: string, width = 1) {
+  doc.strokeColor(color).lineWidth(width).moveTo(x1, y).lineTo(x2, y).stroke();
+}
+
 export function generatePDF(
   simulation: Simulation,
   companySnapshot: CompanySnapshot,
@@ -34,10 +57,10 @@ export function generatePDF(
     try {
       const doc = new PDFDocument({
         size: "A4",
-        margin: 50,
+        margin: 0,
         info: {
-          Title: "Diagnóstico Previdenciário - Machado Schutz",
-          Author: "Machado Schutz Advogados",
+          Title: "Diagnóstico Previdenciário - Machado Schütz & Heck",
+          Author: "Machado Schütz & Heck Advogados Associados",
           Subject: `Diagnóstico para ${companySnapshot.razaoSocial}`,
         },
       });
@@ -47,30 +70,77 @@ export function generatePDF(
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      const primaryColor = "#0891b2";
-      const textColor = "#1f2937";
-      const lightGray = "#6b7280";
+      const pageWidth = doc.page.width;
+      const pageHeight = doc.page.height;
+      const margin = 50;
+      const contentWidth = pageWidth - margin * 2;
 
-      doc.rect(0, 0, doc.page.width, 120).fill(primaryColor);
+      // === HEADER ===
+      const headerHeight = 100;
+      doc.rect(0, 0, pageWidth, headerHeight).fill(MSH_GREEN);
+
+      const logoPath = getLogoPath();
+      if (logoPath) {
+        try {
+          doc.image(logoPath, margin, 20, { height: 60 });
+        } catch {
+          doc
+            .fillColor("#ffffff")
+            .fontSize(22)
+            .font("Helvetica-Bold")
+            .text("MSH", margin, 30);
+        }
+      } else {
+        doc
+          .fillColor("#ffffff")
+          .fontSize(22)
+          .font("Helvetica-Bold")
+          .text("MSH", margin, 30);
+      }
 
       doc
         .fillColor("#ffffff")
-        .fontSize(24)
+        .fontSize(10)
+        .font("Helvetica")
+        .text("Advogados Associados", pageWidth - 200, 35, { width: 150, align: "right" });
+
+      doc
+        .fillColor(MSH_BEIGE)
+        .fontSize(13)
         .font("Helvetica-Bold")
-        .text("MACHADO SCHUTZ", 50, 35);
+        .text("Diagnóstico Previdenciário", pageWidth - 200, 55, { width: 150, align: "right" });
 
-      doc.fontSize(12).font("Helvetica").text("Advogados", 50, 62);
+      doc.rect(0, headerHeight, pageWidth, 4).fill(MSH_BEIGE);
 
-      doc.fontSize(18).font("Helvetica-Bold").text("Diagnóstico Previdenciário", 50, 90);
+      // === LEAD INFO ===
+      let y = headerHeight + 24;
 
-      let y = 150;
+      doc
+        .fillColor(MSH_TEXT_SECONDARY)
+        .fontSize(9)
+        .font("Helvetica")
+        .text(`Preparado para: ${lead.name}`, margin, y);
 
-      doc.fillColor(textColor).fontSize(14).font("Helvetica-Bold").text("Dados da Empresa", 50, y);
-      y += 25;
+      doc
+        .text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, pageWidth - 200, y, { width: 150, align: "right" });
 
-      doc.fontSize(10).font("Helvetica");
+      y += 22;
 
-      const baseLabel = companySnapshot.baseInputType === "folha" ? "Valor médio da folha:" : "Colaboradores:";
+      drawLine(doc, margin, y, pageWidth - margin, MSH_BEIGE, 0.5);
+
+      // === DADOS DA EMPRESA ===
+      y += 18;
+
+      doc.rect(margin - 4, y - 2, 4, 18).fill(MSH_GREEN);
+      doc
+        .fillColor(MSH_GREEN)
+        .fontSize(13)
+        .font("Helvetica-Bold")
+        .text("Dados da Empresa", margin + 8, y);
+
+      y += 28;
+
+      const baseLabel = companySnapshot.baseInputType === "folha" ? "Valor médio da folha" : "Colaboradores";
       const baseValue = companySnapshot.baseInputType === "folha"
         ? formatCurrency(companySnapshot.folhaMedia || simulation.folhaMedia || simulation.baseFolha)
         : companySnapshot.colaboradores.toString();
@@ -78,110 +148,173 @@ export function generatePDF(
       const fpasLine = fpasDescription ? `${companySnapshot.fpasCode} - ${fpasDescription}` : companySnapshot.fpasCode;
 
       const companyData = [
-        { label: "CNPJ:", value: formatCNPJ(companySnapshot.cnpj) },
-        { label: "Razão Social:", value: companySnapshot.razaoSocial },
-        { label: "Segmento:", value: companySnapshot.segmento },
-        { label: "FPAS:", value: fpasLine },
+        { label: "CNPJ", value: formatCNPJ(companySnapshot.cnpj) },
+        { label: "Razão Social", value: companySnapshot.razaoSocial },
+        { label: "Segmento", value: companySnapshot.segmento },
+        { label: "FPAS", value: fpasLine },
         { label: baseLabel, value: baseValue },
-        { label: "Desonerada:", value: companySnapshot.isDesonerada ? "Sim" : "Não" },
+        { label: "Desonerada", value: companySnapshot.isDesonerada ? "Sim" : "Não" },
       ];
 
-      companyData.forEach((item) => {
-        doc.fillColor(lightGray).text(item.label, 50, y, { continued: true });
-        doc.fillColor(textColor).text(` ${item.value}`);
-        y += 18;
+      const col1X = margin;
+      const col2X = margin + contentWidth / 2 + 10;
+      const labelWidth = 110;
+
+      companyData.forEach((item, idx) => {
+        const colX = idx % 2 === 0 ? col1X : col2X;
+        const rowY = y + Math.floor(idx / 2) * 20;
+
+        doc.fillColor(MSH_TEXT_SECONDARY).fontSize(9).font("Helvetica").text(item.label + ":", colX, rowY, { width: labelWidth, continued: false });
+        doc.fillColor(MSH_TEXT).fontSize(9).font("Helvetica-Bold").text(item.value, colX + labelWidth, rowY);
       });
 
-      y += 20;
-      doc.fillColor(textColor).fontSize(14).font("Helvetica-Bold").text("Resumo do Cálculo", 50, y);
-      y += 25;
+      y += Math.ceil(companyData.length / 2) * 20 + 14;
 
-      doc.fontSize(10).font("Helvetica");
+      drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
+
+      // === RESUMO DO CÁLCULO ===
+      y += 18;
+
+      doc.rect(margin - 4, y - 2, 4, 18).fill(MSH_GREEN);
+      doc
+        .fillColor(MSH_GREEN)
+        .fontSize(13)
+        .font("Helvetica-Bold")
+        .text("Resumo do Cálculo", margin + 8, y);
+
+      y += 28;
 
       const calculationData = [
-        { label: "Base da Folha:", value: formatCurrency(simulation.baseFolha) },
-        { label: "Imposto Mensal Estimado:", value: formatCurrency(simulation.impostoMensalEstimado) },
-        { label: "Meses de Projeção:", value: simulation.mesesProjetados.toString() },
-        { label: "Total Projetado:", value: formatCurrency(simulation.totalProjetado) },
+        { label: "Base da Folha", value: formatCurrency(simulation.baseFolha) },
+        { label: "Imposto Mensal Estimado", value: formatCurrency(simulation.impostoMensalEstimado) },
+        { label: "Meses de Projeção", value: simulation.mesesProjetados.toString() },
+        { label: "Total Projetado", value: formatCurrency(simulation.totalProjetado) },
       ];
 
-      calculationData.forEach((item) => {
-        doc.fillColor(lightGray).text(item.label, 50, y, { continued: true });
-        doc.fillColor(textColor).text(` ${item.value}`);
-        y += 18;
+      calculationData.forEach((item, idx) => {
+        const colX = idx % 2 === 0 ? col1X : col2X;
+        const rowY = y + Math.floor(idx / 2) * 20;
+
+        doc.fillColor(MSH_TEXT_SECONDARY).fontSize(9).font("Helvetica").text(item.label + ":", colX, rowY, { width: labelWidth + 20, continued: false });
+        doc.fillColor(MSH_TEXT).fontSize(9).font("Helvetica-Bold").text(item.value, colX + labelWidth + 20, rowY);
       });
 
-      y += 10;
+      y += Math.ceil(calculationData.length / 2) * 20 + 10;
+
+      // === CRÉDITO TOTAL ===
+      const creditBoxY = y;
+      const creditBoxHeight = 50;
+      doc.rect(margin, creditBoxY, contentWidth, creditBoxHeight).fill(MSH_GREEN);
+
       doc
-        .fillColor(primaryColor)
-        .fontSize(12)
+        .fillColor("#ffffff")
+        .fontSize(11)
+        .font("Helvetica")
+        .text("Crédito Estimado Total", margin + 20, creditBoxY + 10);
+
+      doc
+        .fillColor(MSH_BEIGE)
+        .fontSize(20)
         .font("Helvetica-Bold")
-        .text("Crédito Estimado Total: " + formatCurrency(simulation.creditoEstimadoTotal), 50, y);
+        .text(formatCurrency(simulation.creditoEstimadoTotal), margin + 20, creditBoxY + 26);
 
-      y += 40;
-      doc.fillColor(textColor).fontSize(14).font("Helvetica-Bold").text("Distribuição", 50, y);
-      y += 25;
+      y = creditBoxY + creditBoxHeight + 24;
 
-      const boxWidth = 150;
-      const boxHeight = 60;
-      const spacing = 20;
-      const startX = 50;
+      // === DISTRIBUIÇÃO ===
+      doc.rect(margin - 4, y - 2, 4, 18).fill(MSH_GREEN);
+      doc
+        .fillColor(MSH_GREEN)
+        .fontSize(13)
+        .font("Helvetica-Bold")
+        .text("Distribuição por Nível de Risco", margin + 8, y);
+
+      y += 30;
+
+      const boxWidth = (contentWidth - 20) / 3;
+      const boxHeight = 75;
 
       const distribution = [
-        { color: "#10b981", value: simulation.creditoVerde, percent: params.percentualVerde },
-        { color: "#f59e0b", value: simulation.creditoAmarelo, percent: params.percentualAmarelo },
-        { color: "#ef4444", value: simulation.creditoVermelho, percent: params.percentualVermelho },
+        { label: "Verde", color: "#10b981", borderColor: "#059669", value: simulation.creditoVerde, percent: params.percentualVerde },
+        { label: "Amarelo", color: "#f59e0b", borderColor: "#d97706", value: simulation.creditoAmarelo, percent: params.percentualAmarelo },
+        { label: "Vermelho", color: "#ef4444", borderColor: "#dc2626", value: simulation.creditoVermelho, percent: params.percentualVermelho },
       ];
 
       distribution.forEach((item, idx) => {
-        const offsetX = startX + idx * (boxWidth + spacing);
-        doc.rect(offsetX, y, boxWidth, boxHeight).fill(item.color);
+        const offsetX = margin + idx * (boxWidth + 10);
+
+        doc.rect(offsetX, y, boxWidth, 4).fill(item.color);
+
+        doc.rect(offsetX, y + 4, boxWidth, boxHeight - 4).fill(MSH_LIGHT_BG);
+
         doc
-          .fillColor("#ffffff")
-          .fontSize(14)
+          .fillColor(MSH_TEXT)
+          .fontSize(9)
           .font("Helvetica-Bold")
-          .text(formatCurrency(item.value), offsetX + 10, y + 16);
+          .text(item.label, offsetX + 12, y + 14, { width: boxWidth - 24 });
+
         doc
+          .fillColor(MSH_TEXT)
+          .fontSize(15)
+          .font("Helvetica-Bold")
+          .text(formatCurrency(item.value), offsetX + 12, y + 30, { width: boxWidth - 24 });
+
+        doc
+          .fillColor(MSH_TEXT_SECONDARY)
           .fontSize(10)
           .font("Helvetica")
-          .text(formatPercentage(item.percent), offsetX + 10, y + 38);
+          .text(formatPercentage(item.percent), offsetX + 12, y + 52, { width: boxWidth - 24 });
       });
 
-      y += boxHeight + 40;
+      y += boxHeight + 28;
+
+      // === AVISO LEGAL ===
+      drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
+      y += 14;
+
+      doc.rect(margin - 4, y - 2, 4, 14).fill(MSH_BEIGE);
+      doc
+        .fillColor(MSH_TEXT)
+        .fontSize(9)
+        .font("Helvetica-Bold")
+        .text("Aviso Legal", margin + 8, y);
+
+      y += 18;
 
       doc
-        .rect(50, y, doc.page.width - 100, 100)
-        .fillColor("#f3f4f6")
-        .fill();
-
-      doc.fillColor(textColor).fontSize(10).font("Helvetica-Bold").text("Aviso Legal", 60, y + 10);
-
-      doc
-        .fontSize(8)
+        .fontSize(7.5)
         .font("Helvetica")
-        .fillColor(lightGray)
+        .fillColor(MSH_TEXT_SECONDARY)
         .text(
           "Os valores apresentados são estimativas baseadas nos parâmetros informados e têm caráter meramente ilustrativo. " +
             "Os cálculos não constituem garantia de recuperação de crédito e estão sujeitos a análise técnica e jurídica detalhada. " +
             "Para uma avaliação precisa, entre em contato com nossa equipe especializada.",
-          60,
-          y + 28,
-          { width: doc.page.width - 120, align: "justify" }
+          margin,
+          y,
+          { width: contentWidth, align: "justify", lineGap: 2 }
         );
 
-      const footerY = doc.page.height - 50;
+      // === FOOTER ===
+      const footerHeight = 45;
+      const footerY = pageHeight - footerHeight;
+
+      doc.rect(0, footerY, pageWidth, footerHeight).fill(MSH_GREEN);
+
       doc
-        .fillColor(lightGray)
+        .fillColor(MSH_BEIGE)
         .fontSize(8)
-        .text("Machado Schutz Advogados - Calculadora Previdenciária V1", 50, footerY, {
+        .font("Helvetica-Bold")
+        .text("Machado Schütz & Heck Advogados Associados", margin, footerY + 10, {
+          width: contentWidth,
           align: "center",
-          width: doc.page.width - 100,
         });
 
       doc
-        .text(`Documento gerado em ${new Date().toLocaleDateString("pt-BR")}`, 50, footerY + 12, {
+        .fillColor("#ffffff")
+        .fontSize(7)
+        .font("Helvetica")
+        .text("www.msh.adv.br  |  Calculadora Previdenciária V1.1", margin, footerY + 24, {
+          width: contentWidth,
           align: "center",
-          width: doc.page.width - 100,
         });
 
       doc.end();
