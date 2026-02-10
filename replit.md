@@ -114,7 +114,7 @@ npm run db:push      # Sincroniza schema com banco de dados
 - `/admin` - Login do backoffice
 - `/admin/dashboard` - Dashboard administrativo
 
-## Identidade Visual - Machado Schütz
+## Identidade Visual - Machado Schutz
 
 ### Paleta de Cores
 - **Primária**: #1F5C4A (Verde Institucional) - Header, footer, botões principais
@@ -152,7 +152,8 @@ npm run db:push      # Sincroniza schema com banco de dados
 - **Webhook de Leads**: Notificação para sistemas externos (CRM) com retry e headers customizáveis
 - **LGPD Compliance**: Checkbox obrigatório de consentimento com link configurável para política de privacidade
 - **Admin Integrações**: Nova aba no backoffice para configurar e-mail, webhook e URL da política
-- **Identidade visual Machado Schütz**: Paleta de cores verde institucional aplicada
+- **Identidade visual Machado Schutz**: Paleta de cores verde institucional aplicada
+- **PDF com logo Negativo_Dourado-Horizontal.png**: Logo horizontal com barra dourada no header do PDF
 - Consulta de CNPJ com debounce e fallback de APIs
 - Mapeamento automático CNAE → FPAS
 - Dark mode com identidade visual preservada
