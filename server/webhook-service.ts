@@ -41,9 +41,208 @@ interface SendWebhookParams {
   companySnapshot: CompanySnapshot;
 }
 
+function isTeamsWebhook(url: string): boolean {
+  return url.includes('webhook.office.com');
+}
+
+function formatBRL(value: string): string {
+  const num = parseFloat(value);
+  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatCNPJ(cnpj: string): string {
+  const digits = cnpj.replace(/\D/g, '');
+  if (digits.length === 14) {
+    return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`;
+  }
+  return cnpj;
+}
+
+function buildTeamsAdaptiveCard(payload: WebhookPayload): object {
+  const { lead, simulation, company } = payload.data;
+  const dashboardUrl = `${process.env.REPLIT_DEV_DOMAIN ? 'https://' + process.env.REPLIT_DEV_DOMAIN : ''}/admin/dashboard`;
+
+  return {
+    type: "message",
+    attachments: [
+      {
+        contentType: "application/vnd.microsoft.card.adaptive",
+        content: {
+          "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+          type: "AdaptiveCard",
+          version: "1.4",
+          body: [
+            {
+              type: "Container",
+              style: "emphasis",
+              items: [
+                {
+                  type: "TextBlock",
+                  text: "Novo Lead - Calculadora Previdenciaria",
+                  weight: "Bolder",
+                  size: "Large",
+                  color: "Good"
+                },
+                {
+                  type: "TextBlock",
+                  text: `Recebido em ${new Date(payload.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
+                  size: "Small",
+                  isSubtle: true
+                }
+              ]
+            },
+            {
+              type: "Container",
+              items: [
+                {
+                  type: "TextBlock",
+                  text: "Dados do Lead",
+                  weight: "Bolder",
+                  size: "Medium",
+                  spacing: "Medium"
+                },
+                {
+                  type: "FactSet",
+                  facts: [
+                    { title: "Nome", value: lead.name },
+                    { title: "E-mail", value: lead.email },
+                    { title: "Telefone", value: lead.phone || "Nao informado" }
+                  ]
+                }
+              ]
+            },
+            {
+              type: "Container",
+              items: [
+                {
+                  type: "TextBlock",
+                  text: "Dados da Empresa",
+                  weight: "Bolder",
+                  size: "Medium",
+                  spacing: "Medium"
+                },
+                {
+                  type: "FactSet",
+                  facts: [
+                    { title: "Razao Social", value: company.razaoSocial },
+                    { title: "CNPJ", value: formatCNPJ(company.cnpj) },
+                    { title: "Segmento", value: company.segmento },
+                    { title: "FPAS", value: company.fpasCode },
+                    { title: "Colaboradores", value: String(company.colaboradores) },
+                    { title: "Desonerada", value: company.isDesonerada ? "Sim" : "Nao" }
+                  ]
+                }
+              ]
+            },
+            {
+              type: "Container",
+              items: [
+                {
+                  type: "TextBlock",
+                  text: "Resultado da Simulacao",
+                  weight: "Bolder",
+                  size: "Medium",
+                  spacing: "Medium"
+                },
+                {
+                  type: "FactSet",
+                  facts: [
+                    { title: "Base da Folha", value: formatBRL(simulation.baseFolha) },
+                    { title: "Imposto Mensal", value: formatBRL(simulation.impostoMensalEstimado) },
+                    { title: "Total Projetado", value: formatBRL(simulation.totalProjetado) },
+                    { title: "Credito Estimado Total", value: formatBRL(simulation.creditoEstimadoTotal) }
+                  ]
+                }
+              ]
+            },
+            {
+              type: "Container",
+              items: [
+                {
+                  type: "TextBlock",
+                  text: "Distribuicao de Risco",
+                  weight: "Bolder",
+                  size: "Medium",
+                  spacing: "Medium"
+                },
+                {
+                  type: "ColumnSet",
+                  columns: [
+                    {
+                      type: "Column",
+                      width: "stretch",
+                      items: [
+                        {
+                          type: "TextBlock",
+                          text: "Verde (Baixo)",
+                          color: "Good",
+                          weight: "Bolder",
+                          horizontalAlignment: "Center"
+                        },
+                        {
+                          type: "TextBlock",
+                          text: formatBRL(simulation.creditoVerde),
+                          horizontalAlignment: "Center"
+                        }
+                      ]
+                    },
+                    {
+                      type: "Column",
+                      width: "stretch",
+                      items: [
+                        {
+                          type: "TextBlock",
+                          text: "Amarelo (Medio)",
+                          color: "Warning",
+                          weight: "Bolder",
+                          horizontalAlignment: "Center"
+                        },
+                        {
+                          type: "TextBlock",
+                          text: formatBRL(simulation.creditoAmarelo),
+                          horizontalAlignment: "Center"
+                        }
+                      ]
+                    },
+                    {
+                      type: "Column",
+                      width: "stretch",
+                      items: [
+                        {
+                          type: "TextBlock",
+                          text: "Vermelho (Alto)",
+                          color: "Attention",
+                          weight: "Bolder",
+                          horizontalAlignment: "Center"
+                        },
+                        {
+                          type: "TextBlock",
+                          text: formatBRL(simulation.creditoVermelho),
+                          horizontalAlignment: "Center"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          actions: dashboardUrl ? [
+            {
+              type: "Action.OpenUrl",
+              title: "Ver Leads no Dashboard",
+              url: dashboardUrl
+            }
+          ] : []
+        }
+      }
+    ]
+  };
+}
+
 async function sendWithRetry(
   url: string,
-  payload: WebhookPayload,
+  body: object,
   headers: Record<string, string>,
   retryCount: number
 ): Promise<{ success: boolean; error?: string }> {
@@ -57,7 +256,7 @@ async function sendWithRetry(
           'Content-Type': 'application/json',
           ...headers,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
@@ -65,7 +264,8 @@ async function sendWithRetry(
         return { success: true };
       }
 
-      lastError = `HTTP ${response.status}: ${response.statusText}`;
+      const responseBody = await response.text().catch(() => '');
+      lastError = `HTTP ${response.status}: ${response.statusText}${responseBody ? ` - ${responseBody}` : ''}`;
       console.log(`[Webhook] Attempt ${attempt + 1} failed: ${lastError}`);
     } catch (error) {
       lastError = error instanceof Error ? error.message : 'Unknown error';
@@ -132,8 +332,20 @@ export async function sendLeadWebhook(params: SendWebhookParams): Promise<{ succ
       },
     };
 
+    const isTeams = isTeamsWebhook(webhookConfig.url);
+    let body: object;
+
+    if (isTeams) {
+      console.log('[Webhook] Teams webhook detected, using Adaptive Card format');
+      body = buildTeamsAdaptiveCard(payload);
+      const { Authorization, authorization, ...cleanHeaders } = headers;
+      headers = cleanHeaders;
+    } else {
+      body = payload;
+    }
+
     console.log('[Webhook] Sending webhook to:', webhookConfig.url);
-    const result = await sendWithRetry(webhookConfig.url, payload, headers, webhookConfig.retryCount);
+    const result = await sendWithRetry(webhookConfig.url, body, headers, webhookConfig.retryCount);
 
     if (result.success) {
       console.log('[Webhook] Webhook sent successfully');
