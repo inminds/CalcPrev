@@ -137,8 +137,8 @@ function SpeedometerGauge({
       <div className="relative">
         <svg
           width="200"
-          height="150"
-          viewBox="0 0 200 150"
+          height="170"
+          viewBox="0 0 200 170"
           className="drop-shadow-lg"
         >
           <defs>
