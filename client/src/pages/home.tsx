@@ -40,27 +40,43 @@ export default function Home() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-12">
-              <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border card-elevated">
-                <Shield className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">{tx("Seguro", "Secure")}</h3>
-                <p className="text-sm text-muted-foreground">
+
+              <div className="p-4 rounded-xl bg-card border border-border card-elevated">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">
+                    {tx("Seguro", "Secure")}
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
                   {tx("Seus dados protegidos", "Your data protected")}
                 </p>
               </div>
-              <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border card-elevated">
-                <Clock className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">{tx("Rapido", "Fast")}</h3>
-                <p className="text-sm text-muted-foreground">
+
+              <div className="p-4 rounded-xl bg-card border border-border card-elevated">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">
+                    {tx("Rapido", "Fast")}
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
                   {tx("Resultado em segundos", "Results in seconds")}
                 </p>
               </div>
-              <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border card-elevated">
-                <FileText className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">{tx("PDF Completo", "Complete PDF")}</h3>
-                <p className="text-sm text-muted-foreground">
+
+              <div className="p-4 rounded-xl bg-card border border-border card-elevated">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">
+                    {tx("PDF Completo", "Complete PDF")}
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
                   {tx("Diagnostico detalhado", "Detailed diagnostic")}
                 </p>
               </div>
+
             </div>
           </div>
         </section>
