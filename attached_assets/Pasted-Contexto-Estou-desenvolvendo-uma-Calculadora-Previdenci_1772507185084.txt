@@ -1,0 +1,278 @@
+Contexto: Estou desenvolvendo uma Calculadora Previdenciária para o escritório Machado Schutz Advogados e Associados. Preciso que o Header, Footer e identidade visual sejam idênticos a outro projeto do mesmo escritório. Abaixo estão os arquivos de referência exatos e as diretrizes de design system.
+
+PALETA DE CORES (variáveis CSS para o index.css)
+Substitua ou adicione estas variáveis no :root do seu index.css:
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 164 100% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 164 100% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 164 100% 16%;
+  --primary: 164 100% 16%;       /* Verde Institucional - RGB(0, 81, 59) */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 31 52% 67%;       /* Dourado/Bege - RGB(215, 174, 129) */
+  --secondary-foreground: 164 100% 16%;
+  --muted: 31 40% 95%;
+  --muted-foreground: 164 35% 30%;
+  --accent: 31 52% 67%;
+  --accent-foreground: 164 100% 16%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 31 26% 84%;
+  --input: 31 26% 84%;
+  --ring: 164 100% 16%;
+  --radius: 0.75rem;
+}
+Cores equivalentes em hex para referência:
+
+Verde Institucional (primary): #00513B / #1F5C4A
+Verde Escuro (hover): #163F34
+Dourado/Bege (secondary/accent): #D7AE81
+Fundo (background): #FFFFFF
+Cards: #F2F2F2
+Texto principal: segue foreground
+TIPOGRAFIA (adicionar no index.css dentro de @layer base)
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold;
+  }
+  h1 { @apply text-4xl; }
+  h2 { @apply text-3xl; }
+  h3 { @apply text-2xl; }
+}
+UTILITIES CSS (adicionar no index.css)
+.glass-panel {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+}
+.card-elevated {
+  @apply shadow-lg shadow-primary/10 border-border/50 hover:shadow-xl hover:shadow-primary/20 transition-all;
+}
+ARQUIVO: components/layout/Header.tsx
+import { useI18n } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+export function Header() {
+  const { tx } = useI18n();
+  return (
+    <header className="bg-primary shadow-lg">
+      <div className="mx-auto w-full max-w-6xl px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-md bg-white/10 flex items-center justify-center overflow-hidden">
+            <img
+              src="/assets/logos/logo-light.png"
+              alt="Machado Schutz"
+              className="h-8 w-8 object-contain"
+            />
+          </div>
+          <div className="leading-tight">
+            <h1 className="font-semibold text-base text-primary-foreground">
+              Machado Schutz
+            </h1>
+            <p className="text-primary-foreground/80 text-xs">
+              {tx("Calculadora Previdenciária", "Social Security Calculator")}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center">
+          <LanguageSwitcher placement="inline" />
+        </div>
+      </div>
+    </header>
+  );
+}
+Nota: O subtítulo foi adaptado para "Calculadora Previdenciária" — ajuste conforme o nome da sua ferramenta.
+
+ARQUIVO: components/layout/Footer.tsx
+import { useI18n } from "@/lib/i18n";
+export function Footer() {
+  const { tx } = useI18n();
+  return (
+    <footer className="bg-primary py-3 mt-auto">
+      <div className="mx-auto w-full max-w-6xl px-4 text-primary-foreground">
+        <div className="text-[11px] text-primary-foreground/70 flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+          <span>
+            {tx(
+              "© Machado Schutz Advogados e Associados | Calculadora Previdenciária",
+              "© Machado Schutz Attorneys | Social Security Calculator",
+            )}
+          </span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <a
+              className="hover:text-primary-foreground text-primary-foreground/75"
+              href="https://msh.adv.br/politica-de-privacidade/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {tx("Privacidade", "Privacy")}
+            </a>
+            <a
+              className="hover:text-primary-foreground text-primary-foreground/75"
+              href="https://msh.adv.br/politica-de-cookies/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {tx("Cookies", "Cookies")}
+            </a>
+            <a
+              className="hover:text-primary-foreground text-primary-foreground/75"
+              href="https://msh.adv.br/contato/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {tx("Contato", "Contact")}
+            </a>
+          </div>
+          <span className="text-primary-foreground/50">
+            <a
+              href="https://inminds.com.br"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-primary-foreground transition-colors"
+            >
+              InMinds Technology
+            </a>
+          </span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+ARQUIVO: components/layout/PublicLayout.tsx
+import { ReactNode } from "react";
+import { Header } from "./Header";
+import { Footer } from "./Footer";
+export function PublicLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-muted flex flex-col">
+      <Header />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  );
+}
+ARQUIVO: components/LanguageSwitcher.tsx
+import { Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useI18n, type AppLanguage } from "@/lib/i18n";
+type LanguageSwitcherProps = {
+  placement?: "floating" | "inline";
+};
+export function LanguageSwitcher({ placement = "floating" }: LanguageSwitcherProps) {
+  const { language, setLanguage, tx } = useI18n();
+  const isFloating = placement === "floating";
+  return (
+    <div className={isFloating ? "fixed right-4 top-4 z-50" : "w-full"}>
+      <div
+        className={`flex items-center gap-2 rounded-lg border border-border px-2 py-1 ${
+          isFloating ? "bg-white/95 shadow-sm backdrop-blur" : "bg-card"
+        }`}
+      >
+        <Globe className="h-4 w-4 text-muted-foreground" />
+        <Select value={language} onValueChange={(value) => setLanguage(value as AppLanguage)}>
+          <SelectTrigger
+            className={`h-8 border-none bg-transparent p-0 shadow-none focus:ring-0 ${
+              isFloating ? "w-[150px]" : "w-full"
+            }`}
+          >
+            <SelectValue placeholder={tx("Idioma", "Language")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pt-BR">{tx("Português (Brasil)", "Portuguese (Brazil)")}</SelectItem>
+            <SelectItem value="en-US">English</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+ARQUIVO: lib/i18n.tsx
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { Locale } from "date-fns";
+import { enUS, ptBR } from "date-fns/locale";
+export type AppLanguage = "pt-BR" | "en-US";
+type I18nContextValue = {
+  language: AppLanguage;
+  setLanguage: (language: AppLanguage) => void;
+  tx: (ptBr: string, enUs: string) => string;
+  dateLocale: Locale;
+};
+const STORAGE_KEY = "calc-prev.language";
+const DEFAULT_LANGUAGE: AppLanguage = "pt-BR";
+const I18nContext = createContext<I18nContextValue | null>(null);
+function resolveInitialLanguage(): AppLanguage {
+  if (typeof window === "undefined") return DEFAULT_LANGUAGE;
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  if (stored === "pt-BR" || stored === "en-US") return stored;
+  return DEFAULT_LANGUAGE;
+}
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<AppLanguage>(resolveInitialLanguage);
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, language);
+    document.documentElement.lang = language;
+  }, [language]);
+  const setLanguage = useCallback((next: AppLanguage) => {
+    setLanguageState(next);
+  }, []);
+  const tx = useCallback(
+    (ptBr: string, enUs: string) => (language === "pt-BR" ? ptBr : enUs),
+    [language],
+  );
+  const value = useMemo<I18nContextValue>(
+    () => ({ language, setLanguage, tx, dateLocale: language === "pt-BR" ? ptBR : enUS }),
+    [language, setLanguage, tx],
+  );
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+export function useI18n(): I18nContextValue {
+  const context = useContext(I18nContext);
+  if (!context) throw new Error("useI18n must be used within I18nProvider");
+  return context;
+}
+DIRETRIZES DE DESIGN (para o agente aplicar em todas as telas)
+Botões:
+
+Primário: bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25
+Secundário: variant="secondary"
+Outline: variant="outline"
+Destrutivo: variant="destructive"
+Disabled: opacidade automática do shadcn
+Cards:
+
+Container: rounded-xl border border-border bg-card p-5
+Elevado: classe card-elevated
+Formulários:
+
+Labels: text-sm font-medium text-foreground
+Inputs: usar shadcn Input (herda --input e --ring)
+Espaçamento entre campos: space-y-4
+Cores de status:
+
+Sucesso: rgb(34 197 94) / text-green-500
+Erro: hsl(var(--destructive)) / text-destructive
+Alerta: rgb(245 158 11) / text-yellow-500
+Espaçamento e grid:
+
+Container principal: mx-auto w-full max-w-6xl px-4
+Padding de página: p-4 md:p-8
+Grid de cards: grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4
+Layout de rotas:
+
+Páginas públicas: envolver com <PublicLayout> (Header + Footer)
+Login admin: sem wrapper (bare)
+Dashboard admin: usar sidebar própria (sem Header/Footer global)
+DEPENDÊNCIAS NECESSÁRIAS
+lucide-react (ícones)
+date-fns (locales para i18n)
+shadcn Select component (npx shadcn-ui add select)
+ASSET NECESSÁRIO
+Colocar o logo em public/assets/logos/logo-light.png
+Esse é o prompt completo. Basta colar no chat do agente no outro Repl. Se quiser, pode também enviar os prints das telas deste projeto (Home, AdminLogin, Dashboard) como referência visual junto com o prompt — o agente vai poder comparar.
