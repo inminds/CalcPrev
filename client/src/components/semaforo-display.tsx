@@ -133,12 +133,12 @@ function SpeedometerGauge({
   const filledEndAngle = startAngle + animatedPercentage * totalSweep;
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-1">
       <div className="relative">
         <svg
           width="200"
-          height="170"
-          viewBox="0 0 200 170"
+          height="180"
+          viewBox="0 0 200 180"
           className="drop-shadow-lg"
         >
           <defs>
@@ -291,7 +291,7 @@ export function SemaforoDisplay({
             className="flex flex-col items-center rounded-lg p-4 bg-muted/30 dark:bg-muted/10"
             data-testid={`semaforo-${gauge.key}`}
           >
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-0">
               <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: gauge.color, boxShadow: `0 0 8px ${gauge.glowColor}` }}
