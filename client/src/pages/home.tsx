@@ -23,24 +23,24 @@ export default function Home() {
   return (
     <PublicLayout>
       {!simulationResult && (
-        <section className="relative py-12 md:py-16 bg-muted">
+          <section className="relative pt-6 pb-3 md:pt-8 md:pb-4 bg-muted">
           <div className="mx-auto w-full max-w-6xl px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3 leading-tight">
               {tx("Descubra o Potencial de Credito", "Discover Your Credit Potential")}
               <br />
               <span className="text-primary">
                 {tx("da Sua Empresa", "for Your Company")}
               </span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
+
+            <p className="text-muted-foreground text-base max-w-2xl mx-auto mb-6">
               {tx(
                 "Faca sua pre-analise gratuita e estime oportunidades de recuperacao de credito previdenciario de forma rapida e confiavel.",
                 "Get your free pre-analysis and estimate social security credit recovery opportunities quickly and reliably."
               )}
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-12">
-
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
               <div className="p-4 rounded-xl bg-card border border-border card-elevated">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Shield className="h-5 w-5 text-primary" />
@@ -76,13 +76,12 @@ export default function Home() {
                   {tx("Diagnostico detalhado", "Detailed diagnostic")}
                 </p>
               </div>
-
             </div>
           </div>
         </section>
       )}
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 md:py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-8 md:pt-6 md:pb-10">
         {simulationResult ? (
           <SimulationResultDisplay
             result={simulationResult}
@@ -92,6 +91,7 @@ export default function Home() {
           <CalculatorForm onSuccess={handleSimulationSuccess} />
         )}
       </div>
+   
     </PublicLayout>
   );
 }

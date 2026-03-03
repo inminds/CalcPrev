@@ -8,7 +8,14 @@ export function Header() {
   return (
     <header className="bg-primary shadow-lg sticky top-0 z-50" data-testid="header">
       <div className="mx-auto w-full max-w-6xl px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+
+        {/* Marca clicável */}
+        <a
+          href="https://msh.adv.br"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+        >
           <div className="h-10 w-10 rounded-md bg-white/10 flex items-center justify-center overflow-hidden">
             <img
               src="/logo-light.png"
@@ -16,6 +23,7 @@ export function Header() {
               className="h-8 w-8 object-contain"
             />
           </div>
+
           <div className="leading-tight">
             <h1 className="font-semibold text-base text-primary-foreground">
               Machado Schutz
@@ -24,11 +32,14 @@ export function Header() {
               {tx("Calculadora Previdenciaria", "Social Security Calculator")}
             </p>
           </div>
-        </div>
+        </a>
+
+        {/* Controles à direita */}
         <div className="flex items-center gap-1">
           <LanguageSwitcher className="text-primary-foreground hover:bg-white/10" />
           <ThemeToggle className="text-primary-foreground hover:bg-white/10" />
         </div>
+
       </div>
     </header>
   );
