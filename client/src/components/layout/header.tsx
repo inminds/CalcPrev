@@ -1,5 +1,6 @@
 import { useI18n } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const { tx } = useI18n();
@@ -24,8 +25,9 @@ export function Header() {
             </p>
           </div>
         </div>
-        <div className="flex items-center">
-          <LanguageSwitcher placement="inline" />
+        <div className="flex items-center gap-1">
+          <LanguageSwitcher className="text-primary-foreground hover:bg-white/10" />
+          <ThemeToggle className="text-primary-foreground hover:bg-white/10" />
         </div>
       </div>
     </header>

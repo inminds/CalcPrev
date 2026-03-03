@@ -7,6 +7,7 @@ import { formatCurrency, formatCNPJ } from "@/lib/formatters";
 import { Download, ArrowLeft, Building2, Calculator, TrendingUp, Gauge } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { SimulationResult, Fpas } from "@shared/schema";
+import { useI18n } from "@/lib/i18n";
 
 interface SimulationResultProps {
   result: SimulationResult;
@@ -16,10 +17,11 @@ interface SimulationResultProps {
 export function SimulationResultDisplay({ result, onNewSimulation }: SimulationResultProps) {
   const { simulation, companySnapshot } = result;
   const { data: fpasOptions } = useQuery<Fpas[]>({ queryKey: ["/api/fpas"] });
+  const { tx } = useI18n();
 
   const fpasDescricao = fpasOptions?.find((item) => item.code === companySnapshot.fpasCode)?.descricao;
   const fpasDisplay = fpasDescricao ? `${companySnapshot.fpasCode} - ${fpasDescricao}` : companySnapshot.fpasCode;
-  const baseLabel = companySnapshot.baseInputType === "folha" ? "Valor médio da folha" : "Colaboradores";
+  const baseLabel = companySnapshot.baseInputType === "folha" ? tx("Valor medio da folha", "Average payroll") : tx("Colaboradores", "Employees");
   const baseValue = companySnapshot.baseInputType === "folha"
     ? formatCurrency(simulation.folhaMedia || companySnapshot.folhaMedia || simulation.baseFolha)
     : companySnapshot.colaboradores;
@@ -62,10 +64,10 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">
-            Diagnóstico Previdenciário
+            {tx("Diagnostico Previdenciario", "Social Security Diagnosis")}
           </CardTitle>
           <CardDescription>
-            Resultado da sua pré-análise de crédito
+            {tx("Resultado da sua pre-analise de credito", "Your credit pre-analysis result")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -73,23 +75,23 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-2 text-primary font-medium">
               <Building2 className="h-4 w-4" />
-              <span>Dados da Empresa</span>
+              <span>{tx("Dados da Empresa", "Company Data")}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">CNPJ:</span>
+                <span className="text-muted-foreground">{tx("CNPJ:", "CNPJ (Tax ID):")}</span>
                 <span className="ml-2 font-medium" data-testid="text-cnpj">
                   {formatCNPJ(companySnapshot.cnpj)}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Razão Social:</span>
+                <span className="text-muted-foreground">{tx("Razao Social:", "Company Name:")}</span>
                 <span className="ml-2 font-medium" data-testid="text-razao-social">
                   {companySnapshot.razaoSocial}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Segmento:</span>
+                <span className="text-muted-foreground">{tx("Segmento:", "Segment:")}</span>
                 <span className="ml-2 font-medium" data-testid="text-segmento">
                   {companySnapshot.segmento}
                 </span>
@@ -101,19 +103,19 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">FPAS:</span>
+                <span className="text-muted-foreground">{tx("FPAS:", "FPAS:")}</span>
                 <span className="ml-2 font-medium" data-testid="text-fpas">
                   {fpasDisplay}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Desonerada:</span>
+                <span className="text-muted-foreground">{tx("Desonerada:", "Tax-exempt:")}</span>
                 <Badge
                   variant={companySnapshot.isDesonerada ? "default" : "secondary"}
                   className="ml-2"
                   data-testid="badge-desonerada"
                 >
-                  {companySnapshot.isDesonerada ? "Sim" : "Não"}
+                  {companySnapshot.isDesonerada ? tx("Sim", "Yes") : tx("Nao", "No")}
                 </Badge>
               </div>
             </div>
@@ -125,13 +127,13 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-primary font-medium">
               <Calculator className="h-4 w-4" />
-              <span>Resumo do Cálculo</span>
+              <span>{tx("Resumo do Calculo", "Calculation Summary")}</span>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card className="bg-card">
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Base da Folha</div>
+                  <div className="text-sm text-muted-foreground">{tx("Base da Folha", "Payroll Base")}</div>
                   <div className="text-xl font-bold" data-testid="value-base-folha">
                     {formatCurrency(simulation.baseFolha)}
                   </div>
@@ -140,7 +142,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               
               <Card className="bg-card">
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Imposto Mensal Estimado</div>
+                  <div className="text-sm text-muted-foreground">{tx("Imposto Mensal Estimado", "Estimated Monthly Tax")}</div>
                   <div className="text-xl font-bold" data-testid="value-imposto-mensal">
                     {formatCurrency(simulation.impostoMensalEstimado)}
                   </div>
@@ -149,7 +151,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               
               <Card className="bg-card">
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Total Projetado ({simulation.mesesProjetados} meses)</div>
+                  <div className="text-sm text-muted-foreground">{tx(`Total Projetado (${simulation.mesesProjetados} meses)`, `Projected Total (${simulation.mesesProjetados} months)`)}</div>
                   <div className="text-xl font-bold" data-testid="value-total-projetado">
                     {formatCurrency(simulation.totalProjetado)}
                   </div>
@@ -158,7 +160,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               
               <Card className="bg-primary text-primary-foreground">
                 <CardContent className="p-4">
-                  <div className="text-sm opacity-90">Crédito Estimado Total</div>
+                  <div className="text-sm opacity-90">{tx("Credito Estimado Total", "Total Estimated Credit")}</div>
                   <div className="text-2xl font-bold" data-testid="value-credito-total">
                     {formatCurrency(simulation.creditoEstimadoTotal)}
                   </div>
@@ -173,7 +175,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-primary font-medium">
               <Gauge className="h-5 w-5" />
-              <span className="text-lg">Painel de Distribuição</span>
+              <span className="text-lg">{tx("Painel de Distribuicao", "Distribution Panel")}</span>
             </div>
             <SemaforoDisplay
               creditoVerde={simulation.creditoVerde}
@@ -187,12 +189,12 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
 
           {/* Disclaimer */}
           <div className="bg-muted/50 rounded-lg p-4 text-xs text-muted-foreground border-l-4 border-l-amber-500">
-            <p className="font-medium text-foreground mb-1">Aviso Legal</p>
+            <p className="font-medium text-foreground mb-1">{tx("Aviso Legal", "Legal Disclaimer")}</p>
             <p>
-              Os valores apresentados são estimativas baseadas nos parâmetros informados e têm
-              caráter meramente ilustrativo. Os cálculos não constituem garantia de
-              recuperação de crédito e estão sujeitos a análise técnica e jurídica
-              detalhada. Para uma avaliação precisa, entre em contato com nossa equipe.
+              {tx(
+                "Os valores apresentados sao estimativas baseadas nos parametros informados e tem carater meramente ilustrativo. Os calculos nao constituem garantia de recuperacao de credito e estao sujeitos a analise tecnica e juridica detalhada. Para uma avaliacao precisa, entre em contato com nossa equipe.",
+                "The values presented are estimates based on the provided parameters and are for illustrative purposes only. The calculations do not constitute a guarantee of credit recovery and are subject to detailed technical and legal analysis. For an accurate assessment, please contact our team."
+              )}
             </p>
           </div>
 
@@ -205,7 +207,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               data-testid="button-new-simulation"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Nova Simulação
+              {tx("Nova Simulacao", "New Simulation")}
             </Button>
             <Button
               className="flex-1"
@@ -213,7 +215,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               data-testid="button-download-pdf"
             >
               <Download className="mr-2 h-4 w-4" />
-              Baixar PDF do Diagnóstico
+              {tx("Baixar PDF do Diagnostico", "Download Diagnosis PDF")}
             </Button>
           </div>
         </CardContent>
