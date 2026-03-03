@@ -1,4 +1,4 @@
-import { formatCurrency, formatPercentage } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SemaforoDisplayProps {
@@ -210,12 +210,9 @@ function SpeedometerGauge({
         />
       </div>
 
-      <div className="flex flex-col items-center gap-1 text-center">
+      <div className="flex flex-col items-center text-center mt-2">
         <span className="text-2xl font-bold tracking-tight" data-testid={`value-${label}`}>
           {formatCurrency(value)}
-        </span>
-        <span className="text-lg font-semibold opacity-80" data-testid={`percent-${label}`}>
-          {formatPercentage(percentage)}
         </span>
       </div>
     </div>
