@@ -94,8 +94,8 @@ Configurações gerais: URL da política de privacidade.
 1. **Base da Folha** = Salário Mínimo × Quantidade de Colaboradores
 2. **Alíquota Total** = Alíquota FPAS (terceiros) + RAT (3% se não desonerada)
 3. **Imposto Mensal** = Base da Folha × Alíquota Total
-4. **Total Projetado** = Imposto Mensal × 65 meses
-5. **Crédito Estimado** = Total Projetado × 20%
+4. **Crédito Estimado Mensal** = Imposto Mensal × 20%
+5. **Total Crédito Projetado** = Crédito Estimado Mensal × 65 meses
 6. **Distribuição Semáforo**:
    - Verde (baixo risco): 15%
    - Amarelo (médio risco): 35%

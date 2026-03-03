@@ -305,7 +305,7 @@ export function generatePDF(
         { label: "Base da Folha", value: formatCurrency(simulation.baseFolha) },
         { label: "Imposto Mensal", value: formatCurrency(simulation.impostoMensalEstimado) },
         { label: "Meses de Projeção", value: simulation.mesesProjetados.toString() },
-        { label: "Total Projetado", value: formatCurrency(simulation.totalProjetado) },
+        { label: "Crédito Estimado Mensal", value: formatCurrency(simulation.totalProjetado) },
       ];
 
       const calcCol2X = margin + contentWidth / 2 + 10;
@@ -326,7 +326,7 @@ export function generatePDF(
       const creditBoxH = 46;
       doc.rect(margin, y, contentWidth, creditBoxH).fill(MSH_GREEN);
 
-      doc.fillColor("#ffffff").fontSize(10).font("Helvetica").text("Crédito Estimado Total", margin + 16, y + 8);
+      doc.fillColor("#ffffff").fontSize(10).font("Helvetica").text(`Total Crédito Projetado (${simulation.mesesProjetados} meses)`, margin + 16, y + 8);
       doc.fillColor(MSH_BEIGE).fontSize(18).font("Helvetica-Bold").text(formatCurrency(simulation.creditoEstimadoTotal), margin + 16, y + 24);
 
       y += creditBoxH + 18;

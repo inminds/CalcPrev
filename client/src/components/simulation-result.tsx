@@ -151,7 +151,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               
               <Card className="bg-card">
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">{tx(`Total Projetado (${simulation.mesesProjetados} meses)`, `Projected Total (${simulation.mesesProjetados} months)`)}</div>
+                  <div className="text-sm text-muted-foreground">{tx("Credito Estimado Mensal", "Monthly Estimated Credit")}</div>
                   <div className="text-xl font-bold" data-testid="value-total-projetado">
                     {formatCurrency(simulation.totalProjetado)}
                   </div>
@@ -160,7 +160,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
               
               <Card className="bg-primary text-primary-foreground">
                 <CardContent className="p-4">
-                  <div className="text-sm opacity-90">{tx("Credito Estimado Total", "Total Estimated Credit")}</div>
+                  <div className="text-sm opacity-90">{tx(`Total Credito Projetado (${simulation.mesesProjetados} meses)`, `Total Projected Credit (${simulation.mesesProjetados} months)`)}</div>
                   <div className="text-2xl font-bold" data-testid="value-credito-total">
                     {formatCurrency(simulation.creditoEstimadoTotal)}
                   </div>

@@ -42,13 +42,13 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
   const aliquotaTotal = aliquotaTerceiros + aliquotaRat;
   const impostoMensalEstimado = baseFolha * aliquotaTotal;
 
-  const totalProjetado = impostoMensalEstimado * mesesProjecao;
+  const creditoEstimadoMensal = impostoMensalEstimado * percentualCredito;
 
-  const creditoEstimadoTotal = totalProjetado * percentualCredito;
+  const totalCreditoProjetado = creditoEstimadoMensal * mesesProjecao;
 
-  const creditoVerde = creditoEstimadoTotal * percentualVerde;
-  const creditoAmarelo = creditoEstimadoTotal * percentualAmarelo;
-  const creditoVermelho = creditoEstimadoTotal * percentualVermelho;
+  const creditoVerde = totalCreditoProjetado * percentualVerde;
+  const creditoAmarelo = totalCreditoProjetado * percentualAmarelo;
+  const creditoVermelho = totalCreditoProjetado * percentualVermelho;
 
   return {
     baseFolha: baseFolha.toFixed(2),
@@ -56,8 +56,8 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
     aliquotaRat: aliquotaRat.toFixed(4),
     mesesProjetados: mesesProjecao,
     impostoMensalEstimado: impostoMensalEstimado.toFixed(2),
-    totalProjetado: totalProjetado.toFixed(2),
-    creditoEstimadoTotal: creditoEstimadoTotal.toFixed(2),
+    totalProjetado: creditoEstimadoMensal.toFixed(2),
+    creditoEstimadoTotal: totalCreditoProjetado.toFixed(2),
     creditoVerde: creditoVerde.toFixed(2),
     creditoAmarelo: creditoAmarelo.toFixed(2),
     creditoVermelho: creditoVermelho.toFixed(2),
