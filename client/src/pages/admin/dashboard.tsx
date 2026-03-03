@@ -538,7 +538,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="mx-auto w-full max-w-6xl px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/">
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" data-testid="button-back-home">
@@ -563,7 +563,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="mx-auto w-full max-w-6xl px-4 py-8">
         <Tabs defaultValue="params" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="params" data-testid="tab-params">

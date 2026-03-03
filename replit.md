@@ -17,9 +17,14 @@ Aplicação web para estimativa de oportunidades de crédito previdenciário. Ge
 ```
 ├── client/                 # Frontend React
 │   ├── src/
-│   │   ├── components/     # Componentes reutilizáveis
+│   │   ├── components/
+│   │   │   ├── layout/     # Header, Footer, PublicLayout (reutilizáveis)
+│   │   │   ├── language-switcher.tsx  # Seletor PT-BR / EN-US
+│   │   │   └── ...         # Componentes de UI
 │   │   ├── pages/          # Páginas da aplicação
-│   │   ├── lib/            # Utilitários e helpers
+│   │   ├── lib/
+│   │   │   ├── i18n.tsx    # Sistema de internacionalização (PT-BR / EN-US)
+│   │   │   └── ...         # Utilitários e helpers
 │   │   └── hooks/          # React hooks customizados
 ├── server/                 # Backend Express
 │   ├── routes.ts           # Rotas da API
@@ -117,17 +122,18 @@ npm run db:push      # Sincroniza schema com banco de dados
 ## Identidade Visual - Machado Schutz
 
 ### Paleta de Cores
-- **Primária**: #1F5C4A (Verde Institucional) - Header, footer, botões principais
-- **Secundária**: #163F34 (Verde Escuro) - Hover states
+- **Primária**: #00513B (Verde Institucional) - Header, footer, botões principais
+- **Secundária/Accent**: #D7AE81 (Dourado/Bege) - Detalhes e acentos
 - **Texto Principal**: #1C1C1C (Preto Grafite)
-- **Texto Secundário**: #4F4F4F (Cinza Médio)
 - **Background**: #FFFFFF (Branco)
-- **Cards/Containers**: #F2F2F2 (Cinza Claro)
-- **Separadores**: #E0E0E0
+- **Muted**: Bege claro (seções alternadas)
+- **Bordas**: Tom bege sutil
 
 ### Aplicação
 - Header e footer com fundo verde institucional e texto branco
-- Ícones e destaques em verde institucional
+- Componentes reutilizáveis: Header, Footer, PublicLayout
+- Seletor de idioma PT-BR / EN-US no header
+- Tipografia: Helvetica Neue, tracking-tight, font-semibold nos headings
 - Dark mode com variações do verde para manter identidade
 
 ## Consulta de CNPJ
@@ -146,6 +152,14 @@ npm run db:push      # Sincroniza schema com banco de dados
 - CNAE 49-99 (Serviços) → FPAS 515
 
 ## Changelog
+
+### V1.2 (2026-03-03)
+- **Identidade Visual Padronizada**: Header, Footer e PublicLayout como componentes reutilizáveis
+- **i18n (PT-BR / EN-US)**: Sistema de internacionalização com seletor de idioma no header
+- **Paleta Atualizada**: Primary #00513B, Secondary/Accent #D7AE81 (dourado/bege)
+- **Tipografia**: Helvetica Neue com headings tracking-tight e font-semibold
+- **Webhook Teams**: Formato Adaptive Card para Microsoft Teams com detecção automática de URL
+- **CSS Design System**: Utility classes glass-panel e card-elevated, variáveis padronizadas
 
 ### V1.1 (2026-01-27)
 - **Automação de E-mail**: Envio automático de PDF via Resend após simulação
