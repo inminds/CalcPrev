@@ -20,10 +20,6 @@ function formatCNPJ(value: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
-function formatPercentage(value: string | number): string {
-  const numValue = typeof value === "string" ? parseFloat(value) : value;
-  return `${(numValue * 100).toFixed(0)}%`;
-}
 
 const MSH_GREEN = "#00513B";
 const MSH_BEIGE = "#D7AE81";
@@ -115,8 +111,7 @@ function drawSpeedometer(
   percentage: number,
   color: string,
   label: string,
-  valueText: string,
-  percentText: string
+  valueText: string
 ) {
   const startAngle = 225;
   const totalSweep = 270;
@@ -184,9 +179,8 @@ function drawSpeedometer(
   doc.restore();
   doc.fillColor(MSH_TEXT).fontSize(8).font("Helvetica-Bold").text(label, labelDotX + 6, labelDotY, { width: 50 });
 
-  const textY = cy + 10;
+  const textY = cy + radius - 8;
   doc.fillColor(MSH_TEXT).fontSize(11).font("Helvetica-Bold").text(valueText, cx - 55, textY, { width: 110, align: "center" });
-  doc.fillColor(MSH_TEXT_SECONDARY).fontSize(9).font("Helvetica").text(percentText, cx - 40, textY + 16, { width: 80, align: "center" });
 }
 
 export function generatePDF(
@@ -359,12 +353,11 @@ export function generatePDF(
           pct,
           item.color,
           item.label,
-          formatCurrency(item.value),
-          formatPercentage(item.percent)
+          formatCurrency(item.value)
         );
       });
 
-      y = gaugeCenterY + 40;
+      y = gaugeCenterY + gaugeRadius + 10;
 
       // === AVISO LEGAL ===
       drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
