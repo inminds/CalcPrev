@@ -202,7 +202,7 @@ export const calculatorFormSchema = z.object({
   fpasCode: z.string().min(1, "FPAS é obrigatório"),
   isDesonerada: z.boolean(),
   baseInputType: z.enum(["colaboradores", "folha"]).default("colaboradores"),
-  colaboradores: z.number().min(1, "Mínimo de 1 colaborador").optional(),
+  colaboradores: z.number().min(10, "Mínimo de 10 colaboradores").optional(),
   folhaMedia: z.number().min(1, "Informe o valor médio da folha").optional(),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
@@ -212,7 +212,7 @@ export const calculatorFormSchema = z.object({
   }),
 }).refine((data) => {
   if (data.baseInputType === "colaboradores") {
-    return (data.colaboradores ?? 0) >= 1;
+    return (data.colaboradores ?? 0) >= 10;
   }
   return (data.folhaMedia ?? 0) > 0;
 }, {

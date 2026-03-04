@@ -274,7 +274,6 @@ export function generatePDF(
         { label: "CNPJ", value: formatCNPJ(companySnapshot.cnpj) },
         { label: "Razão Social", value: companySnapshot.razaoSocial },
         { label: "Segmento", value: companySnapshot.segmento },
-        { label: "FPAS", value: fpasLine },
         { label: baseLabel, value: baseValue },
         { label: "Desonerada", value: companySnapshot.isDesonerada ? "Sim" : "Não" },
       ];

@@ -47,10 +47,10 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       cnpj: "",
       razaoSocial: "",
       segmento: "",
-      fpasCode: "",
+      fpasCode: "515",
       isDesonerada: false,
       baseInputType: "colaboradores",
-      colaboradores: 100,
+      colaboradores: 10,
       folhaMedia: undefined,
       name: "",
       email: "",
@@ -72,7 +72,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
   useEffect(() => {
     if (baseInputType === "colaboradores") {
       const current = form.getValues("colaboradores");
-      const nextValue = current && current > 10 ? current : 100;
+      const nextValue = current && current >= 10 ? current : 10;
       form.setValue("colaboradores", nextValue);
     } else {
       const currentFolha = form.getValues("folhaMedia");
@@ -283,30 +283,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                   <FormField
                     control={form.control}
                     name="fpasCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{tx("Enquadramento FPAS", "FPAS Classification")}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-fpas">
-                              <SelectValue placeholder={tx("Selecione o FPAS", "Select FPAS")} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {fpasOptions?.map((fpas) => (
-                              <SelectItem
-                                key={fpas.code}
-                                value={fpas.code}
-                                data-testid={`select-fpas-${fpas.code}`}
-                              >
-                                {fpas.code} - {fpas.descricao}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => <input type="hidden" {...field} />}
                   />
 
                   <FormField
@@ -343,7 +320,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                             field.onChange(value);
                             if (value === "colaboradores") {
                               const current = form.getValues("colaboradores");
-                              const nextValue = current && current > 10 ? current : 100;
+                              const nextValue = current && current >= 10 ? current : 10;
                               form.setValue("colaboradores", nextValue);
                             } else {
                               const nextFolha = form.getValues("folhaMedia") || 15000;
@@ -377,13 +354,18 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                           <FormLabel>{tx("Quantidade de colaboradores", "Number of employees")}</FormLabel>
                           <FormControl>
                             <Input
-                              {...field}
                               type="number"
-                              min={11}
+                              min={10}
+                              value={field.value ?? ""}
                               onChange={(e) => {
-                                const parsed = parseInt(e.target.value) || 0;
-                                const safeValue = Math.max(11, parsed);
-                                field.onChange(safeValue);
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : parseInt(val) || 0);
+                              }}
+                              onBlur={() => {
+                                const v = field.value;
+                                if (v === undefined || v === null || v < 10) {
+                                  field.onChange(10);
+                                }
                               }}
                               data-testid="input-colaboradores"
                             />

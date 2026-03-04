@@ -103,12 +103,6 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">{tx("FPAS:", "FPAS:")}</span>
-                <span className="ml-2 font-medium" data-testid="text-fpas">
-                  {fpasDisplay}
-                </span>
-              </div>
-              <div>
                 <span className="text-muted-foreground">{tx("Desonerada:", "Tax-exempt:")}</span>
                 <Badge
                   variant={companySnapshot.isDesonerada ? "default" : "secondary"}
