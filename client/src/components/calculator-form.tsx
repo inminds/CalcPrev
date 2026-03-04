@@ -279,34 +279,11 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                   )}
                 />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="fpasCode"
-                    render={({ field }) => <input type="hidden" {...field} />}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="isDesonerada"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            {tx("Empresa Desonerada?", "Tax-exempt Company?")}
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="switch-desonerada"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="fpasCode"
+                  render={({ field }) => <input type="hidden" {...field} />}
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
@@ -356,16 +333,10 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                             <Input
                               type="number"
                               min={10}
-                              value={field.value ?? ""}
+                              value={field.value === undefined || field.value === null ? "" : field.value}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 field.onChange(val === "" ? undefined : parseInt(val) || 0);
-                              }}
-                              onBlur={() => {
-                                const v = field.value;
-                                if (v === undefined || v === null || v < 10) {
-                                  field.onChange(10);
-                                }
                               }}
                               data-testid="input-colaboradores"
                             />
@@ -402,6 +373,27 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                     />
                   )}
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="isDesonerada"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          {tx("Empresa Desonerada?", "Tax-exempt Company?")}
+                        </FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-desonerada"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
