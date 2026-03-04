@@ -50,7 +50,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       fpasCode: "515",
       isDesonerada: false,
       baseInputType: "colaboradores",
-      colaboradores: 10,
+      colaboradores: undefined,
       folhaMedia: undefined,
       name: "",
       email: "",
@@ -71,9 +71,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
 
   useEffect(() => {
     if (baseInputType === "colaboradores") {
-      const current = form.getValues("colaboradores");
-      const nextValue = current && current >= 10 ? current : 10;
-      form.setValue("colaboradores", nextValue);
+      // Don't force a value — let user type freely
     } else {
       const currentFolha = form.getValues("folhaMedia");
       const nextFolha = currentFolha && currentFolha > 0 ? currentFolha : 15000;
@@ -296,9 +294,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                           onValueChange={(value) => {
                             field.onChange(value);
                             if (value === "colaboradores") {
-                              const current = form.getValues("colaboradores");
-                              const nextValue = current && current >= 10 ? current : 10;
-                              form.setValue("colaboradores", nextValue);
+                              // Don't force a value — let user type freely
                             } else {
                               const nextFolha = form.getValues("folhaMedia") || 15000;
                               form.setValue("folhaMedia", nextFolha);

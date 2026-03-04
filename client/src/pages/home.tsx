@@ -5,6 +5,7 @@ import { PublicLayout } from "@/components/layout/public-layout";
 import { useI18n } from "@/lib/i18n";
 import type { SimulationResult } from "@shared/schema";
 import { Shield, Clock, FileText } from "lucide-react";
+import fundoCalculadora from "@assets/fundo_calculadora_1772657266439.png";
 
 export default function Home() {
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
@@ -81,15 +82,25 @@ export default function Home() {
         </section>
       )}
 
-      <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-8 md:pt-6 md:pb-10">
-        {simulationResult ? (
-          <SimulationResultDisplay
-            result={simulationResult}
-            onNewSimulation={handleNewSimulation}
-          />
-        ) : (
-          <CalculatorForm onSuccess={handleSimulationSuccess} />
-        )}
+      <div
+        className="relative"
+        style={{
+          backgroundImage: `url(${fundoCalculadora})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-8 md:pt-6 md:pb-10">
+          {simulationResult ? (
+            <SimulationResultDisplay
+              result={simulationResult}
+              onNewSimulation={handleNewSimulation}
+            />
+          ) : (
+            <CalculatorForm onSuccess={handleSimulationSuccess} />
+          )}
+        </div>
       </div>
    
     </PublicLayout>
