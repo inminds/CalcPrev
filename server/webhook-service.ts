@@ -147,7 +147,7 @@ function buildTeamsAdaptiveCard(payload: WebhookPayload): object {
                 {
                   type: "FactSet",
                   facts: [
-                    { title: "Base da Folha", value: formatBRL(simulation.baseFolha) },
+                    { title: "Base Estimada da Folha", value: formatBRL(simulation.baseFolha) },
                     { title: "Imposto Mensal", value: formatBRL(simulation.impostoMensalEstimado) },
                     { title: "Credito Estimado Mensal", value: formatBRL(simulation.totalProjetado) },
                     { title: "Total Credito Projetado", value: formatBRL(simulation.creditoEstimadoTotal) }

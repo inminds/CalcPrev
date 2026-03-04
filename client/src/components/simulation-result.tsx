@@ -133,7 +133,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card className="bg-card">
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">{tx("Base da Folha", "Payroll Base")}</div>
+                  <div className="text-sm text-muted-foreground">{tx("Base Estimada da Folha", "Payroll Base")}</div>
                   <div className="text-xl font-bold" data-testid="value-base-folha">
                     {formatCurrency(simulation.baseFolha)}
                   </div>
@@ -175,7 +175,7 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-primary font-medium">
               <Gauge className="h-5 w-5" />
-              <span className="text-lg">{tx("Painel de Distribuicao", "Distribution Panel")}</span>
+              <span className="text-lg">{tx("Crédito Projetado por Nível de Classificação", "Project Credit by Classification Level")}</span>
             </div>
             <SemaforoDisplay
               creditoVerde={simulation.creditoVerde}

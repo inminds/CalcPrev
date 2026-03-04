@@ -296,7 +296,7 @@ export function generatePDF(
       y += 22;
 
       const calcFields = [
-        { label: "Base da Folha", value: formatCurrency(simulation.baseFolha) },
+        { label: "Base Estimada da Folha", value: formatCurrency(simulation.baseFolha) },
         { label: "Imposto Mensal", value: formatCurrency(simulation.impostoMensalEstimado) },
         { label: "Meses de Projeção", value: simulation.mesesProjetados.toString() },
         { label: "Crédito Estimado Mensal", value: formatCurrency(simulation.totalProjetado) },

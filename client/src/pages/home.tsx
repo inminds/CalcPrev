@@ -26,10 +26,10 @@ export default function Home() {
           <section className="relative pt-6 pb-3 md:pt-8 md:pb-4 bg-muted">
           <div className="mx-auto w-full max-w-6xl px-4 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-3 leading-tight">
-              {tx("Descubra o Potencial de Credito", "Discover Your Credit Potential")}
+              {tx("Descubra o Potencial de Crédito", "Discover Your Credit Potential")}
               <br />
               <span className="text-primary">
-                {tx("da Sua Empresa", "for Your Company")}
+                {tx("da Sua Folha", "for Your Company")}
               </span>
             </h2>
 
@@ -73,7 +73,7 @@ export default function Home() {
                   </h3>
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  {tx("Diagnostico detalhado", "Detailed diagnostic")}
+                  {tx("Estimativa Prévia", "Previous Estimate")}
                 </p>
               </div>
             </div>

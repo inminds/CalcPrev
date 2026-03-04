@@ -30,10 +30,10 @@ export default function PreviewPage() {
       <section className="py-16 px-4 bg-muted">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {tx("Descubra o Potencial de Credito", "Discover Your Credit Potential")}
+            {tx("Descubra o Potencial de Crédito", "Discover Your Credit Potential")}
           </h2>
           <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary">
-            {tx("da Sua Empresa", "for Your Company")}
+            {tx("da Sua Folha", "for Your Company")}
           </h2>
           <p className="text-lg max-w-2xl mx-auto text-muted-foreground">
             {tx(
@@ -47,7 +47,7 @@ export default function PreviewPage() {
           {[
             { icon: Shield, title: tx("Seguro", "Secure"), desc: tx("Seus dados protegidos", "Your data protected") },
             { icon: Clock, title: tx("Rapido", "Fast"), desc: tx("Resultado em segundos", "Results in seconds") },
-            { icon: FileText, title: tx("PDF Completo", "Complete PDF"), desc: tx("Diagnostico detalhado", "Detailed diagnostic") },
+            { icon: FileText, title: tx("PDF Completo", "Complete PDF"), desc: tx("Estimativa Prévia", "Previous Estimate") },
           ].map((feature, i) => (
             <Card key={i} className="text-center card-elevated">
               <CardContent className="pt-6">
@@ -223,7 +223,7 @@ export default function PreviewPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <Card>
                     <CardContent className="p-4">
-                      <div className="text-sm text-muted-foreground">{tx("Base da Folha", "Payroll Base")}</div>
+                      <div className="text-sm text-muted-foreground">{tx("Base Estimada da Folha", "Payroll Base")}</div>
                       <div className="text-xl font-bold">R$ 70.600,00</div>
                     </CardContent>
                   </Card>
