@@ -1,0 +1,3 @@
+Arquivo de teste para validar commit/push.
+Criado em: 2026-03-11
+Pode ser removido após o teste.
