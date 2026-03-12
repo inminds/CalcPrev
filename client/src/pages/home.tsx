@@ -36,7 +36,7 @@ export default function Home() {
 
             <p className="text-muted-foreground text-base max-w-2xl mx-auto mb-6">
               {tx(
-                "Faca sua pre-analise gratuita e estime oportunidades de recuperacao de credito previdenciario de forma rapida e confiavel.",
+                "Faca sua pré-análise gratuita e estime oportunidades de recuperação de crédito previdenciário de forma rápida e confiável.",
                 "Get your free pre-analysis and estimate social security credit recovery opportunities quickly and reliably."
               )}
             </p>
@@ -58,7 +58,7 @@ export default function Home() {
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Clock className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold">
-                    {tx("Rapido", "Fast")}
+                    {tx("Rápido", "Fast")}
                   </h3>
                 </div>
                 <p className="text-sm text-muted-foreground text-center">

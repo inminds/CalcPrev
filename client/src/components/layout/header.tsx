@@ -29,7 +29,7 @@ export function Header() {
               Machado Schutz
             </h1>
             <p className="text-primary-foreground/80 text-xs">
-              {tx("Calculadora Previdenciaria", "Social Security Calculator")}
+              {tx("Calculadora Previdenciária", "Social Security Calculator")}
             </p>
           </div>
         </a>

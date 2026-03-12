@@ -107,8 +107,8 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
     const cleanCnpj = unformatCNPJ(cnpj);
     if (cleanCnpj.length !== 14) {
       toast({
-        title: tx("CNPJ invalido", "Invalid CNPJ"),
-        description: tx("Digite um CNPJ valido com 14 digitos.", "Enter a valid 14-digit CNPJ."),
+        title: tx("CNPJ inválido", "Invalid CNPJ"),
+        description: tx("Digite um CNPJ válido com 14 dígitos.", "Enter a valid 14-digit CNPJ."),
         variant: "destructive",
       });
       return;
@@ -138,7 +138,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       } else {
         const errorData = await response.json().catch(() => ({}));
         toast({
-          title: tx("CNPJ nao encontrado", "CNPJ not found"),
+          title: tx("CNPJ não encontrado", "CNPJ not found"),
           description: errorData.error || tx("Preencha os dados manualmente.", "Fill in the data manually."),
           variant: "destructive",
         });
@@ -146,7 +146,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
     } catch {
       toast({
         title: tx("Erro na busca", "Search error"),
-        description: tx("Nao foi possivel consultar o CNPJ. Tente novamente ou preencha manualmente.", "Could not look up the CNPJ. Try again or fill in manually."),
+        description: tx("Não foi possível consultar o CNPJ. Tente novamente ou preencha manualmente.", "Could not look up the CNPJ. Try again or fill in manually."),
         variant: "destructive",
       });
     } finally {
@@ -162,15 +162,15 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
     },
     onSuccess: (result) => {
       toast({
-        title: tx("Simulacao realizada com sucesso", "Simulation completed successfully"),
+        title: tx("Simulacão realizada com sucesso", "Simulation completed successfully"),
         description: tx("Confira o resultado abaixo.", "Check the result below."),
       });
       onSuccess(result);
     },
     onError: () => {
       toast({
-        title: tx("Erro na simulacao", "Simulation error"),
-        description: tx("Nao foi possivel processar sua solicitacao. Tente novamente.", "Could not process your request. Please try again."),
+        title: tx("Erro na simulação", "Simulation error"),
+        description: tx("Não foi possível processar sua solicitação. Tente novamente.", "Could not process your request. Please try again."),
         variant: "destructive",
       });
     },
@@ -184,10 +184,10 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
     <Card className="w-full max-w-2xl mx-auto shadow-lg">
       <CardHeader className="space-y-1 pb-6">
         <CardTitle className="text-2xl font-bold text-center">
-          {tx("Calculadora Previdenciaria", "Social Security Calculator")}
+          {tx("Calculadora Previdenciária", "Social Security Calculator")}
         </CardTitle>
         <CardDescription className="text-center">
-          {tx("Preencha os dados abaixo para estimar sua oportunidade de credito", "Fill in the data below to estimate your credit opportunity")}
+          {tx("Preencha os dados abaixo para estimar sua oportunidade de crédito", "Fill in the data below to estimate your credit opportunity")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -246,7 +246,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                 name="razaoSocial"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{tx("Razao Social", "Company Name")}</FormLabel>
+                    <FormLabel>{tx("Razão Social", "Company Name")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -269,7 +269,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={tx("Segmento de atuacao", "Industry segment")}
+                          placeholder={tx("Segmento de atuação", "Industry segment")}
                           data-testid="input-segmento"
                         />
                       </FormControl>
@@ -290,7 +290,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                     name="baseInputType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{tx("Base para o calculo", "Calculation basis")}</FormLabel>
+                        <FormLabel>{tx("Base para o cálculo", "Calculation basis")}</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -315,7 +315,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="colaboradores">{tx("Quantidade de colaboradores", "Number of employees")}</SelectItem>
-                            <SelectItem value="folha">{tx("Valor medio da folha (R$)", "Average payroll value (R$)")}</SelectItem>
+                            <SelectItem value="folha">{tx("Valor médio da folha (R$)", "Average payroll value (R$)")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -361,7 +361,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                       name="folhaMedia"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{tx("Valor medio mensal da folha (R$)", "Monthly average payroll (R$)")}</FormLabel>
+                          <FormLabel>{tx("Valor médio mensal da folha (R$)", "Monthly average payroll (R$)")}</FormLabel>
                           <FormControl>
                             <Input
                               type="text"
@@ -515,7 +515,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                         className="text-primary hover:underline inline-flex items-center gap-1"
                         data-testid="link-privacy-policy"
                       >
-                        {tx("Politica de Privacidade", "Privacy Policy")}
+                        {tx("Política de Privacidade", "Privacy Policy")}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </FormLabel>
@@ -538,7 +538,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                   {tx("Calculando...", "Calculating...")}
                 </>
               ) : (
-                tx("Calcular Credito Previdenciario", "Calculate Social Security Credit")
+                tx("Calcular Crédito Previdenciário", "Calculate Social Security Credit")
               )}
             </Button>
           </form>

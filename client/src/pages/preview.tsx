@@ -37,7 +37,7 @@ export default function PreviewPage() {
           </h2>
           <p className="text-lg max-w-2xl mx-auto text-muted-foreground">
             {tx(
-              "Faca sua pre-analise gratuita e estime oportunidades de recuperacao de credito previdenciario de forma rapida e confiavel.",
+              "Faca sua pré-analise gratuita e estime oportunidades de recuperação de crédito previdenciário de forma rápida e confiável.",
               "Get your free pre-analysis and estimate social security credit recovery opportunities quickly and reliably."
             )}
           </p>
@@ -46,7 +46,7 @@ export default function PreviewPage() {
         <div className="max-w-4xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { icon: Shield, title: tx("Seguro", "Secure"), desc: tx("Seus dados protegidos", "Your data protected") },
-            { icon: Clock, title: tx("Rapido", "Fast"), desc: tx("Resultado em segundos", "Results in seconds") },
+            { icon: Clock, title: tx("Rápido", "Fast"), desc: tx("Resultado em segundos", "Results in seconds") },
             { icon: FileText, title: tx("PDF Completo", "Complete PDF"), desc: tx("Estimativa Prévia", "Previous Estimate") },
           ].map((feature, i) => (
             <Card key={i} className="text-center card-elevated">
@@ -67,11 +67,11 @@ export default function PreviewPage() {
           <Card className="shadow-xl border-t-4 border-t-primary card-elevated">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-2xl font-bold">
-                {tx("Calculadora Previdenciaria", "Social Security Calculator")}
+                {tx("Calculadora Previdenciária", "Social Security Calculator")}
               </CardTitle>
               <CardDescription>
                 {tx(
-                  "Preencha os dados abaixo para estimar sua oportunidade de credito",
+                  "Preencha os dados abaixo para estimar sua oportunidade de crédito",
                   "Fill in the details below to estimate your credit opportunity"
                 )}
               </CardDescription>
@@ -93,14 +93,14 @@ export default function PreviewPage() {
                   </div>
                   
                   <div>
-                    <Label>{tx("Razao Social", "Company Name")}</Label>
+                    <Label>{tx("Razão Social", "Company Name")}</Label>
                     <Input placeholder={tx("Nome da empresa", "Company name")} className="mt-1" />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>{tx("Segmento", "Segment")}</Label>
-                      <Input placeholder={tx("Ex: Comercio", "Ex: Commerce")} className="mt-1" />
+                      <Input placeholder={tx("Ex: Comércio", "Ex: Commerce")} className="mt-1" />
                     </div>
                     <div>
                       <Label>{tx("Enquadramento FPAS", "FPAS Classification")}</Label>
@@ -159,7 +159,7 @@ export default function PreviewPage() {
 
               <Button className="w-full py-6 text-lg font-semibold shadow-lg shadow-primary/25">
                 <Calculator className="mr-2 h-5 w-5" />
-                {tx("Calcular Credito Estimado", "Calculate Estimated Credit")}
+                {tx("Calcular Crédito Estimado", "Calculate Estimated Credit")}
               </Button>
             </CardContent>
           </Card>
@@ -180,10 +180,10 @@ export default function PreviewPage() {
                 </div>
               </div>
               <CardTitle className="text-2xl font-bold">
-                {tx("Diagnostico Previdenciario", "Social Security Diagnostic")}
+                {tx("Diagnóstico Previdenciário", "Social Security Diagnostic")}
               </CardTitle>
               <CardDescription>
-                {tx("Resultado da sua pre-analise de credito", "Result of your credit pre-analysis")}
+                {tx("Resultado da sua pré-análise de crédito", "Result of your credit pre-analysis")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -198,7 +198,7 @@ export default function PreviewPage() {
                     <span className="ml-2 font-medium">00.000.000/0001-91</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">{tx("Razao Social:", "Company:")}:</span>
+                    <span className="text-muted-foreground">{tx("Razão Social:", "Company:")}:</span>
                     <span className="ml-2 font-medium">EMPRESA EXEMPLO LTDA</span>
                   </div>
                   <div>
@@ -217,7 +217,7 @@ export default function PreviewPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-primary font-medium">
                   <Calculator className="h-4 w-4" />
-                  <span>{tx("Resumo do Calculo", "Calculation Summary")}</span>
+                  <span>{tx("Resumo do Cálculo", "Calculation Summary")}</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -244,7 +244,7 @@ export default function PreviewPage() {
                   
                   <Card className="bg-primary text-primary-foreground">
                     <CardContent className="p-4">
-                      <div className="text-sm opacity-90">{tx("Credito Estimado Total", "Total Estimated Credit")}</div>
+                      <div className="text-sm opacity-90">{tx("Crédito Estimado Total", "Total Estimated Credit")}</div>
                       <div className="text-2xl font-bold">R$ 68.835,00</div>
                     </CardContent>
                   </Card>
@@ -255,7 +255,7 @@ export default function PreviewPage() {
 
               <div className="space-y-4">
                 <div className="font-medium text-lg">
-                  {tx("Distribuicao por Nivel de Risco", "Risk Level Distribution")}
+                  {tx("Distribuição por Nível de Risco", "Risk Level Distribution")}
                 </div>
                 
                 <div className="grid grid-cols-3 gap-4">
@@ -275,7 +275,7 @@ export default function PreviewPage() {
                       <div className="h-10 w-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: '#fef9c3' }}>
                         <Clock className="h-5 w-5" style={{ color: '#eab308' }} />
                       </div>
-                      <div className="text-xs font-medium mb-1" style={{ color: '#eab308' }}>{tx("Medio Risco", "Medium Risk")}</div>
+                      <div className="text-xs font-medium mb-1" style={{ color: '#eab308' }}>{tx("Médio Risco", "Medium Risk")}</div>
                       <div className="text-lg font-bold">R$ 24.092,25</div>
                       <Badge variant="secondary" className="mt-1">35%</Badge>
                     </CardContent>
@@ -297,11 +297,11 @@ export default function PreviewPage() {
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button variant="outline" className="flex-1">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  {tx("Nova Simulacao", "New Simulation")}
+                  {tx("Nova Simulação", "New Simulation")}
                 </Button>
                 <Button className="flex-1 shadow-lg shadow-primary/25">
                   <Download className="mr-2 h-4 w-4" />
-                  {tx("Baixar PDF do Diagnostico", "Download Diagnostic PDF")}
+                  {tx("Baixar PDF do Diagnóstico", "Download Diagnostic PDF")}
                 </Button>
               </div>
             </CardContent>
@@ -318,12 +318,12 @@ export default function PreviewPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="h-20 rounded-lg mb-2" style={{ background: '#00513B' }}></div>
-              <p className="font-medium">{tx("Primaria", "Primary")}</p>
+              <p className="font-medium">{tx("Primária", "Primary")}</p>
               <p className="text-sm text-muted-foreground">#00513B</p>
             </div>
             <div className="text-center">
               <div className="h-20 rounded-lg mb-2" style={{ background: '#D7AE81' }}></div>
-              <p className="font-medium">{tx("Secundaria", "Secondary")}</p>
+              <p className="font-medium">{tx("Secundária", "Secondary")}</p>
               <p className="text-sm text-muted-foreground">#D7AE81</p>
             </div>
             <div className="text-center">
