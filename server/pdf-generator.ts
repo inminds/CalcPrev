@@ -463,7 +463,7 @@ export function generatePDF(
       ];
 
       const legendTextOffsetY = 1.5;
-      legendItems.forEach((item) => {
+      legendItems.forEach((item, idx) => {
         const textX = margin + 16;
         const textOptions = { width: contentWidth - 16, lineGap: 2 };
 
@@ -480,7 +480,8 @@ export function generatePDF(
 
         // keep legend text in neutral color (not the dot color)
         doc.fillColor(MSH_TEXT).font("Helvetica");
-        doc.text(item.text, textX, y + legendTextOffsetY, textOptions);
+        const textOffsetY = idx === 1 ? legendTextOffsetY : 1.0;
+        doc.text(item.text, textX, y + textOffsetY, textOptions);
 
         y += rowHeight;
       });
