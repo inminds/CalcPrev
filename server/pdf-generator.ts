@@ -183,6 +183,47 @@ function drawSpeedometer(
   doc.fillColor(MSH_TEXT).fontSize(11).font("Helvetica-Bold").text(valueText, cx - 55, textY, { width: 110, align: "center" });
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function drawJustifiedRichText(
+  doc: PDFKit.PDFDocument,
+  text: string,
+  x: number,
+  y: number,
+  width: number,
+  lineGap: number,
+  boldTerms: string[],
+): number {
+  const termSet = new Set(boldTerms.map((term) => term.toLowerCase()));
+  const regex = new RegExp(`(${boldTerms.map(escapeRegex).join("|")})`, "gi");
+  const segments = text.split(regex).filter(Boolean);
+  const startY = y;
+
+  segments.forEach((segment, index) => {
+    const isBold = termSet.has(segment.toLowerCase());
+    const isLast = index === segments.length - 1;
+
+    doc.font(isBold ? "Helvetica-Bold" : "Helvetica");
+    if (index === 0) {
+      doc.text(segment, x, y, {
+        width,
+        align: "justify",
+        lineGap,
+        continued: !isLast,
+      });
+      return;
+    }
+
+    doc.text(segment, {
+      continued: !isLast,
+    });
+  });
+
+  return doc.y - startY;
+}
+
 export function generatePDF(
   simulation: Simulation,
   companySnapshot: CompanySnapshot,
@@ -367,31 +408,30 @@ export function generatePDF(
 
       y += 16;
 
-      doc
-        .fontSize(8)
-        .font("Helvetica")
-        .fillColor(MSH_TEXT)
-        .text(
-          "Este diagnóstico prévio visa estimar possíveis oportunidades de recuperação de créditos previdenciários, decorrentes de verbas " +
-            "indevidamente incluídas na base de cálculo do INSS Patronal. A análise considera a legislação vigente, incluindo decisões do STF e STJ e o " +
-            "posicionamento de âmbito administrativos da RFB (DRJ, CARF, TRT, TRF e a própria Receita Federal), classificando cada rubrica através de um " +
-            "semáforo de cores (verde, amarelo e vermelho). O estudo evidencia potenciais valores a compensar no período não prescrito dos últimos 5 anos " +
-            "(65 meses \"+13º\"), oferecendo à empresa um mapa claro das oportunidades de economia tributária e dos caminhos mais estratégicos para seu " +
-            "aproveitamento.",
-          margin,
-          y,
-          { width: contentWidth - 6, align: "justify", lineGap: 2 }
-        );
-
-      y += doc.heightOfString(
+      const diagnosisText =
         "Este diagnóstico prévio visa estimar possíveis oportunidades de recuperação de créditos previdenciários, decorrentes de verbas " +
-          "indevidamente incluídas na base de cálculo do INSS Patronal. A análise considera a legislação vigente, incluindo decisões do STF e STJ e o " +
-          "posicionamento de âmbito administrativos da RFB (DRJ, CARF, TRT, TRF e a própria Receita Federal), classificando cada rubrica através de um " +
-          "semáforo de cores (verde, amarelo e vermelho). O estudo evidencia potenciais valores a compensar no período não prescrito dos últimos 5 anos " +
-          "(65 meses \"+13º\"), oferecendo à empresa um mapa claro das oportunidades de economia tributária e dos caminhos mais estratégicos para seu " +
-          "aproveitamento.",
-        { width: contentWidth - 6, align: "justify", lineGap: 2 }
-      );
+        "indevidamente incluídas na base de cálculo do INSS Patronal. A análise considera a legislação vigente, incluindo decisões do STF e STJ e o " +
+        "posicionamento de âmbito administrativos da RFB (DRJ, CARF, TRT, TRF e a própria Receita Federal), classificando cada rubrica através de um " +
+        "semáforo de cores (verde, amarelo e vermelho). O estudo evidencia potenciais valores a compensar no período não prescrito dos últimos 5 anos " +
+        "(65 meses \"+13º\"), oferecendo à empresa um mapa claro das oportunidades de economia tributária e dos caminhos mais estratégicos para seu " +
+        "aproveitamento.";
+
+      const diagnosisBoldTerms = [
+        "INSS Patronal",
+        "STF",
+        "STJ",
+        "DRJ",
+        "CARF",
+        "TRT",
+        "TRF",
+        "Receita Federal",
+        "verde",
+        "amarelo",
+        "vermelho",
+      ];
+
+      doc.fontSize(8).fillColor(MSH_TEXT);
+      y += drawJustifiedRichText(doc, diagnosisText, margin, y, contentWidth - 6, 2, diagnosisBoldTerms);
 
       y += 10;
 
