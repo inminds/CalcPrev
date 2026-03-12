@@ -462,6 +462,7 @@ export function generatePDF(
         { color: "#ef4444", text: "Vermelho - A chance de sucesso é igual ou inferior a 50%." },
       ];
 
+      const legendTextOffsetY = 1.5;
       legendItems.forEach((item) => {
         const textX = margin + 16;
         const textOptions = { width: contentWidth - 16, lineGap: 2 };
@@ -479,7 +480,7 @@ export function generatePDF(
 
         // keep legend text in neutral color (not the dot color)
         doc.fillColor(MSH_TEXT).font("Helvetica");
-        doc.text(item.text, textX, y, textOptions);
+        doc.text(item.text, textX, y + legendTextOffsetY, textOptions);
 
         y += rowHeight;
       });
