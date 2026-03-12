@@ -395,6 +395,39 @@ export function generatePDF(
 
       y += 10;
 
+      // === LEGENDA ===
+      drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
+      y += 10;
+
+      doc.rect(margin - 4, y - 2, 4, 12).fill(MSH_BEIGE);
+      doc.fillColor(MSH_TEXT).fontSize(9).font("Helvetica-Bold").text("Legenda", margin + 8, y);
+      y += 16;
+
+      const legendItems = [
+        { color: "#10b981", text: "Verde - Alta e/ou certa a chance de sucesso." },
+        { color: "#f59e0b", text: "Amarelo - A chance de sucesso é igual ou superior a 50%, mas menor do que verde." },
+        { color: "#ef4444", text: "Vermelho - A chance de sucesso é igual ou inferior a 50%." },
+      ];
+
+      legendItems.forEach((item) => {
+        const dotX = margin + 5;
+        const dotY = y + 5;
+
+        // outer ring for a slightly raised "badge" look
+        doc.circle(dotX, dotY, 4).fillColor("#FFFFFF").fill();
+        doc.circle(dotX, dotY, 3.2).fillColor(item.color).fill();
+
+        doc
+          .fillColor(MSH_TEXT)
+          .fontSize(8)
+          .font("Helvetica")
+          .text(item.text, margin + 16, y, { width: contentWidth - 16, lineGap: 2 });
+
+        y += Math.max(14, doc.heightOfString(item.text, { width: contentWidth - 16, lineGap: 2 }) + 3);
+      });
+
+      y += 8;
+
       // === AVISO LEGAL ===
       drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
       y += 10;
