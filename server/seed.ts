@@ -1,6 +1,4 @@
-import { db } from "./db";
-import { fpas, calculationParams } from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { storage } from "./storage";
 
 const DEFAULT_FPAS = [
   { code: "507", descricao: "Indústria em Geral", aliquotaTerceiros: "0.058" },
@@ -29,17 +27,19 @@ const DEFAULT_PARAMS = {
 
 export async function seedDatabase() {
   try {
-    const existingFpas = await db.select().from(fpas).limit(1);
+    const existingFpas = await storage.getAllFpas();
     if (existingFpas.length === 0) {
       console.log("Seeding FPAS data...");
-      await db.insert(fpas).values(DEFAULT_FPAS);
+      for (const item of DEFAULT_FPAS) {
+        await storage.createFpas(item);
+      }
       console.log("FPAS data seeded successfully");
     }
 
-    const existingParams = await db.select().from(calculationParams).limit(1);
-    if (existingParams.length === 0) {
+    const existingParams = await storage.getCalculationParams();
+    if (!existingParams) {
       console.log("Seeding calculation params...");
-      await db.insert(calculationParams).values(DEFAULT_PARAMS);
+      await storage.upsertCalculationParams(DEFAULT_PARAMS);
       console.log("Calculation params seeded successfully");
     }
 

@@ -216,6 +216,7 @@ export async function registerRoutes(
       const baseInputType = data.baseInputType || "colaboradores";
       const colaboradores = baseInputType === "colaboradores" ? data.colaboradores ?? 0 : 0;
       const folhaMedia = baseInputType === "folha" ? data.folhaMedia ?? 0 : undefined;
+      const folhaMediaDb = typeof folhaMedia === "number" ? folhaMedia.toFixed(2) : undefined;
 
       let params = await storage.getCalculationParams();
       if (!params) {
@@ -265,7 +266,7 @@ export async function registerRoutes(
           isDesonerada: data.isDesonerada,
           colaboradores: colaboradores,
           baseInputType,
-          folhaMedia,
+          folhaMedia: folhaMediaDb,
         },
         simulation: {
           salarioMinimo: params.salarioMinimo,
@@ -273,7 +274,7 @@ export async function registerRoutes(
           aliquotaRat: calculationResult.aliquotaRat,
           mesesProjetados: calculationResult.mesesProjetados,
           baseInputType,
-          folhaMedia,
+          folhaMedia: folhaMediaDb,
           baseFolha: calculationResult.baseFolha,
           impostoMensalEstimado: calculationResult.impostoMensalEstimado,
           totalProjetado: calculationResult.totalProjetado,
