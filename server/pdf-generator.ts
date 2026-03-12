@@ -195,6 +195,8 @@ function drawJustifiedRichText(
   width: number,
   lineGap: number,
   boldTerms: string[],
+  normalColor: string,
+  boldColor: string,
 ): number {
   const termSet = new Set(boldTerms.map((term) => term.toLowerCase()));
   const regex = new RegExp(`(${boldTerms.map(escapeRegex).join("|")})`, "gi");
@@ -205,6 +207,7 @@ function drawJustifiedRichText(
     const isBold = termSet.has(segment.toLowerCase());
     const isLast = index === segments.length - 1;
 
+    doc.fillColor(isBold ? boldColor : normalColor);
     doc.font(isBold ? "Helvetica-Bold" : "Helvetica");
     if (index === 0) {
       doc.text(segment, x, y, {
@@ -431,7 +434,17 @@ export function generatePDF(
       ];
 
       doc.fontSize(8).fillColor(MSH_TEXT);
-      y += drawJustifiedRichText(doc, diagnosisText, margin, y, contentWidth - 6, 2, diagnosisBoldTerms);
+      y += drawJustifiedRichText(
+        doc,
+        diagnosisText,
+        margin,
+        y,
+        contentWidth - 6,
+        2,
+        diagnosisBoldTerms,
+        MSH_TEXT,
+        "#000000",
+      );
 
       y += 10;
 
