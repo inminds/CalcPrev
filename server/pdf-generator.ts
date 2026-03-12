@@ -463,20 +463,25 @@ export function generatePDF(
       ];
 
       legendItems.forEach((item) => {
+        const textX = margin + 16;
+        const textOptions = { width: contentWidth - 16, lineGap: 2 };
+
+        doc.fillColor(MSH_TEXT).fontSize(8).font("Helvetica");
+        const textHeight = doc.heightOfString(item.text, textOptions);
+        const lineHeight = doc.currentLineHeight();
+        const rowHeight = Math.max(textHeight, lineHeight) + 3;
+
         const dotX = margin + 5;
-        const dotY = y + 5;
+        const dotY = y + 4.2;
 
-        // outer ring for a slightly raised "badge" look
-        doc.circle(dotX, dotY, 4).fillColor("#FFFFFF").fill();
-        doc.circle(dotX, dotY, 3.2).fillColor(item.color).fill();
+        // single colored dot aligned to the text line center
+        doc.circle(dotX, dotY, 3.6).fillColor(item.color).fill();
 
-        doc
-          .fillColor(MSH_TEXT)
-          .fontSize(8)
-          .font("Helvetica")
-          .text(item.text, margin + 16, y, { width: contentWidth - 16, lineGap: 2 });
+        // keep legend text in neutral color (not the dot color)
+        doc.fillColor(MSH_TEXT).font("Helvetica");
+        doc.text(item.text, textX, y, textOptions);
 
-        y += Math.max(14, doc.heightOfString(item.text, { width: contentWidth - 16, lineGap: 2 }) + 3);
+        y += rowHeight;
       });
 
       y += 8;
