@@ -50,7 +50,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       fpasCode: "515",
       isDesonerada: false,
       baseInputType: "colaboradores",
-      colaboradores: undefined,
+      colaboradores: 10,
       folhaMedia: undefined,
       name: "",
       email: "",
@@ -71,7 +71,10 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
 
   useEffect(() => {
     if (baseInputType === "colaboradores") {
-      // Don't force a value — let user type freely
+      const currentColaboradores = form.getValues("colaboradores");
+      if (!currentColaboradores || currentColaboradores < 10) {
+        form.setValue("colaboradores", 10);
+      }
     } else {
       const currentFolha = form.getValues("folhaMedia");
       const nextFolha = currentFolha && currentFolha > 0 ? currentFolha : 15000;
@@ -294,7 +297,10 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                           onValueChange={(value) => {
                             field.onChange(value);
                             if (value === "colaboradores") {
-                              // Don't force a value — let user type freely
+                              const currentColaboradores = form.getValues("colaboradores");
+                              if (!currentColaboradores || currentColaboradores < 10) {
+                                form.setValue("colaboradores", 10);
+                              }
                             } else {
                               const nextFolha = form.getValues("folhaMedia") || 15000;
                               form.setValue("folhaMedia", nextFolha);
@@ -333,6 +339,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 field.onChange(val === "" ? undefined : parseInt(val) || 0);
+                                void form.trigger("colaboradores");
                               }}
                               data-testid="input-colaboradores"
                             />
@@ -533,3 +540,4 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
     </Card>
   );
 }
+
