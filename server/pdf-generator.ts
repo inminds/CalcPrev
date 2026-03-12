@@ -380,7 +380,7 @@ export function generatePDF(
             "aproveitamento.",
           margin,
           y,
-          { width: contentWidth, align: "justify", lineGap: 2 }
+          { width: contentWidth - 6, align: "justify", lineGap: 2 }
         );
 
       y += doc.heightOfString(
@@ -390,7 +390,7 @@ export function generatePDF(
           "semáforo de cores (verde, amarelo e vermelho). O estudo evidencia potenciais valores a compensar no período não prescrito dos últimos 5 anos " +
           "(65 meses \"+13º\"), oferecendo à empresa um mapa claro das oportunidades de economia tributária e dos caminhos mais estratégicos para seu " +
           "aproveitamento.",
-        { width: contentWidth, align: "justify", lineGap: 2 }
+        { width: contentWidth - 6, align: "justify", lineGap: 2 }
       );
 
       y += 10;
