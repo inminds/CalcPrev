@@ -10,7 +10,6 @@ function formatCurrency(value: string | number): string {
     currency: "BRL",
   }).format(numValue);
 }
-
 function formatCNPJ(value: string): string {
   const digits = value.replace(/\D/g, "");
   return digits
@@ -492,14 +491,14 @@ export function generatePDF(
       y += 10;
 
       doc.rect(margin - 4, y - 2, 4, 12).fill(MSH_BEIGE);
-      doc.fillColor(MSH_TEXT).fontSize(8).font("Helvetica-Bold").text("Aviso Legal", margin + 8, y);
+      doc.fillColor(MSH_TEXT).fontSize(9).font("Helvetica-Bold").text("Aviso Legal", margin + 8, y);
 
-      y += 14;
+      y += 16;
 
       doc
-        .fontSize(7)
+        .fontSize(8)
         .font("Helvetica")
-        .fillColor(MSH_TEXT_SECONDARY)
+        .fillColor(MSH_TEXT)
         .text(
           "Os valores apresentados são estimativas baseadas nos parâmetros informados e têm caráter meramente ilustrativo. " +
             "Os cálculos não constituem garantia de recuperação de crédito e estão sujeitos a análise técnica e jurídica detalhada. " +
@@ -539,3 +538,4 @@ export function generatePDF(
     }
   });
 }
+
