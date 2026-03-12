@@ -358,6 +358,43 @@ export function generatePDF(
 
       y = gaugeCenterY + gaugeRadius + 10;
 
+      // === DESCRIÇÃO DIAGNÓSTICO ===
+      drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
+      y += 10;
+
+      doc.rect(margin - 4, y - 2, 4, 12).fill(MSH_BEIGE);
+      doc.fillColor(MSH_TEXT).fontSize(9).font("Helvetica-Bold").text("Descrição Diagnóstico", margin + 8, y);
+
+      y += 16;
+
+      doc
+        .fontSize(8)
+        .font("Helvetica")
+        .fillColor(MSH_TEXT)
+        .text(
+          "Este diagnóstico prévio visa estimar possíveis oportunidades de recuperação de créditos previdenciários, decorrentes de verbas " +
+            "indevidamente incluídas na base de cálculo do INSS Patronal. A análise considera a legislação vigente, incluindo decisões do STF e STJ e o " +
+            "posicionamento de âmbito administrativos da RFB (DRJ, CARF, TRT, TRF e a própria Receita Federal), classificando cada rubrica através de um " +
+            "semáforo de cores (verde, amarelo e vermelho). O estudo evidencia potenciais valores a compensar no período não prescrito dos últimos 5 anos " +
+            "(65 meses \"+13º\"), oferecendo à empresa um mapa claro das oportunidades de economia tributária e dos caminhos mais estratégicos para seu " +
+            "aproveitamento.",
+          margin,
+          y,
+          { width: contentWidth, align: "justify", lineGap: 2 }
+        );
+
+      y += doc.heightOfString(
+        "Este diagnóstico prévio visa estimar possíveis oportunidades de recuperação de créditos previdenciários, decorrentes de verbas " +
+          "indevidamente incluídas na base de cálculo do INSS Patronal. A análise considera a legislação vigente, incluindo decisões do STF e STJ e o " +
+          "posicionamento de âmbito administrativos da RFB (DRJ, CARF, TRT, TRF e a própria Receita Federal), classificando cada rubrica através de um " +
+          "semáforo de cores (verde, amarelo e vermelho). O estudo evidencia potenciais valores a compensar no período não prescrito dos últimos 5 anos " +
+          "(65 meses \"+13º\"), oferecendo à empresa um mapa claro das oportunidades de economia tributária e dos caminhos mais estratégicos para seu " +
+          "aproveitamento.",
+        { width: contentWidth, align: "justify", lineGap: 2 }
+      );
+
+      y += 10;
+
       // === AVISO LEGAL ===
       drawLine(doc, margin, y, pageWidth - margin, "#E0E0E0", 0.5);
       y += 10;
