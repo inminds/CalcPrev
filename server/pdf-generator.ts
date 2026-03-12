@@ -369,7 +369,7 @@ export function generatePDF(
 
       // === DISTRIBUIÇÃO COM VELOCÍMETROS ===
       doc.rect(margin - 4, y - 2, 4, 16).fill(MSH_GREEN);
-      doc.fillColor(MSH_GREEN).fontSize(12).font("Helvetica-Bold").text("Distribuição por Nível de Risco", margin + 8, y);
+      doc.fillColor(MSH_GREEN).fontSize(12).font("Helvetica-Bold").text("Crédito Projetado por Nível de Classificação", margin + 8, y);
 
       y += 24;
 
