@@ -40,6 +40,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
   const [cnpjInput, setCnpjInput] = useState("");
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
   const [lastSearchedCnpj, setLastSearchedCnpj] = useState("");
+  const [colaboradoresInput, setColaboradoresInput] = useState("10");
 
   const form = useForm<CalculatorFormData>({
     resolver: zodResolver(calculatorFormSchema),
@@ -71,10 +72,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
 
   useEffect(() => {
     if (baseInputType === "colaboradores") {
-      const currentColaboradores = form.getValues("colaboradores");
-      if (!currentColaboradores || currentColaboradores < 10) {
-        form.setValue("colaboradores", 10);
-      }
+      // keep user-typed value while editing
     } else {
       const currentFolha = form.getValues("folhaMedia");
       const nextFolha = currentFolha && currentFolha > 0 ? currentFolha : 15000;
@@ -298,8 +296,9 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                             field.onChange(value);
                             if (value === "colaboradores") {
                               const currentColaboradores = form.getValues("colaboradores");
-                              if (!currentColaboradores || currentColaboradores < 10) {
+                              if (currentColaboradores === undefined || currentColaboradores === null) {
                                 form.setValue("colaboradores", 10);
+                                setColaboradoresInput("10");
                               }
                             } else {
                               const nextFolha = form.getValues("folhaMedia") || 15000;
@@ -335,10 +334,18 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                             <Input
                               type="number"
                               min={10}
-                              value={field.value === undefined || field.value === null ? "" : field.value}
+                              value={colaboradoresInput}
                               onChange={(e) => {
                                 const val = e.target.value;
-                                field.onChange(val === "" ? undefined : parseInt(val) || 0);
+                                setColaboradoresInput(val);
+                                form.setValue(
+                                  "colaboradores",
+                                  val === "" ? undefined : parseInt(val, 10),
+                                  { shouldDirty: true },
+                                );
+                              }}
+                              onBlur={() => {
+                                field.onBlur();
                                 void form.trigger("colaboradores");
                               }}
                               data-testid="input-colaboradores"
