@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { calculatePrevidenciario } from './calculation';
+import type { CalculationParams, Fpas } from '@shared/schema';
 
-const baseParams = {
+const baseParams: CalculationParams = {
   id: '1',
   salarioMinimo: '1621.00',
   percentualCredito: '0.20',
@@ -13,7 +14,7 @@ const baseParams = {
   updatedAt: new Date(),
 };
 
-const fpas515 = { id: '1', code: '515', descricao: 'Comércio Atacadista', aliquotaTerceiros: '0.058', createdAt: new Date(), updatedAt: new Date() } as any;
+const fpas515: Fpas = { id: '1', code: '515', descricao: 'Comércio Atacadista', aliquotaTerceiros: '0.058', createdAt: new Date(), updatedAt: new Date() };
 
 describe('calculatePrevidenciario', () => {
   it('calculates correctly for non-desonerada company (CPP 20% + RAT 2% + FPAS)', () => {
