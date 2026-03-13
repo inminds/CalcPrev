@@ -57,7 +57,25 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { formatCurrency, formatDate, formatPercentage } from "@/lib/formatters";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { CalculationParams, Fpas, Lead, EmailSettings, WebhookSettings, AppSettings } from "@shared/schema";
+import type { CalculationParams, Fpas, Lead, EmailSettings, WebhookSettings, AppSettings, CnaeRat } from "@shared/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const paramsSchema = z.object({
   salarioMinimo: z.string().min(1, "Obrigatório"),
@@ -104,17 +122,29 @@ const appSettingsSchema = z.object({
   privacyPolicyUrl: z.string().url("URL inválida"),
 });
 
+const cnaeRatFormSchema = z.object({
+  cnaeCode: z.string().min(1, "Código CNAE é obrigatório"),
+  descricao: z.string().min(1, "Descrição é obrigatória"),
+  aliquota: z.string().min(1, "Alíquota é obrigatória"),
+});
+
 type ParamsFormData = z.infer<typeof paramsSchema>;
 type FpasFormData = z.infer<typeof fpasSchema>;
 type EmailSettingsFormData = z.infer<typeof emailSettingsSchema>;
 type WebhookSettingsFormData = z.infer<typeof webhookSettingsSchema>;
 type AppSettingsFormData = z.infer<typeof appSettingsSchema>;
+type CnaeRatFormData = z.infer<typeof cnaeRatFormSchema>;
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [fpasDialogOpen, setFpasDialogOpen] = useState(false);
   const [editingFpas, setEditingFpas] = useState<Fpas | null>(null);
+  const [cnaeRatDialogOpen, setCnaeRatDialogOpen] = useState(false);
+  const [editingCnaeRat, setEditingCnaeRat] = useState<CnaeRat | null>(null);
+  const [cnaeRatSearch, setCnaeRatSearch] = useState("");
+  const [cnaeRatPage, setCnaeRatPage] = useState(1);
+  const cnaeRatPageSize = 50;
 
   const token = sessionStorage.getItem("adminToken");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -218,6 +248,21 @@ export default function AdminDashboard() {
     enabled: isAuthenticated === true,
   });
 
+  const { data: cnaeRatResult, isLoading: cnaeRatLoading } = useQuery<{ data: CnaeRat[]; total: number }>({
+    queryKey: ["/api/admin/cnae-rat", cnaeRatPage, cnaeRatSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(cnaeRatPage),
+        pageSize: String(cnaeRatPageSize),
+      });
+      if (cnaeRatSearch) params.set("q", cnaeRatSearch);
+      const res = await fetchAdmin(`/api/admin/cnae-rat?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch CNAE RAT");
+      return res.json();
+    },
+    enabled: isAuthenticated === true,
+  });
+
   const paramsForm = useForm<ParamsFormData>({
     resolver: zodResolver(paramsSchema),
     defaultValues: {
@@ -265,6 +310,15 @@ export default function AdminDashboard() {
     resolver: zodResolver(appSettingsSchema),
     defaultValues: {
       privacyPolicyUrl: "https://msh.adv.br/politica-de-privacidade/",
+    },
+  });
+
+  const cnaeRatForm = useForm<CnaeRatFormData>({
+    resolver: zodResolver(cnaeRatFormSchema),
+    defaultValues: {
+      cnaeCode: "",
+      descricao: "",
+      aliquota: "0.02",
     },
   });
 
@@ -471,6 +525,103 @@ export default function AdminDashboard() {
     },
   });
 
+  const createCnaeRatMutation = useMutation({
+    mutationFn: async (data: CnaeRatFormData) => {
+      const payload = {
+        cnaeCode: data.cnaeCode.replace(/[.\-\/]/g, ""),
+        descricao: data.descricao,
+        aliquota: data.aliquota,
+      };
+      const res = await fetchAdmin("/api/admin/cnae-rat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to create CNAE RAT");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "CNAE RAT criado com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cnae-rat"] });
+      setCnaeRatDialogOpen(false);
+      cnaeRatForm.reset();
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar CNAE RAT", variant: "destructive" });
+    },
+  });
+
+  const updateCnaeRatMutation = useMutation({
+    mutationFn: async (data: CnaeRatFormData & { id: string }) => {
+      const payload = {
+        cnaeCode: data.cnaeCode.replace(/[.\-\/]/g, ""),
+        descricao: data.descricao,
+        aliquota: data.aliquota,
+      };
+      const res = await fetchAdmin(`/api/admin/cnae-rat/${data.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update CNAE RAT");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "CNAE RAT atualizado com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cnae-rat"] });
+      setCnaeRatDialogOpen(false);
+      setEditingCnaeRat(null);
+      cnaeRatForm.reset();
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar CNAE RAT", variant: "destructive" });
+    },
+  });
+
+  const deleteCnaeRatMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchAdmin(`/api/admin/cnae-rat/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete CNAE RAT");
+    },
+    onSuccess: () => {
+      toast({ title: "CNAE RAT excluído com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cnae-rat"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao excluir CNAE RAT", variant: "destructive" });
+    },
+  });
+
+  const openEditCnaeRat = (item: CnaeRat) => {
+    setEditingCnaeRat(item);
+    cnaeRatForm.reset({
+      cnaeCode: item.cnaeCode,
+      descricao: item.descricao,
+      aliquota: item.aliquota,
+    });
+    setCnaeRatDialogOpen(true);
+  };
+
+  const openNewCnaeRat = () => {
+    setEditingCnaeRat(null);
+    cnaeRatForm.reset({ cnaeCode: "", descricao: "", aliquota: "0.02" });
+    setCnaeRatDialogOpen(true);
+  };
+
+  const handleCnaeRatSubmit = (data: CnaeRatFormData) => {
+    if (editingCnaeRat) {
+      updateCnaeRatMutation.mutate({ ...data, id: editingCnaeRat.id });
+    } else {
+      createCnaeRatMutation.mutate(data);
+    }
+  };
+
+  const cnaeRatData = cnaeRatResult?.data ?? [];
+  const cnaeRatTotal = cnaeRatResult?.total ?? 0;
+  const cnaeRatTotalPages = Math.ceil(cnaeRatTotal / cnaeRatPageSize);
+
   const handleLogout = async () => {
     sessionStorage.removeItem("adminToken");
     try {
@@ -569,7 +720,7 @@ export default function AdminDashboard() {
       {/* Content */}
       <main className="mx-auto w-full max-w-6xl px-4 py-8">
         <Tabs defaultValue="params" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-lg">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="params" data-testid="tab-params">
               <Calculator className="h-4 w-4 mr-2" />
               Parâmetros
@@ -577,6 +728,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="fpas" data-testid="tab-fpas">
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               FPAS
+            </TabsTrigger>
+            <TabsTrigger value="cnae-rat" data-testid="tab-cnae-rat">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Tabela RAT
             </TabsTrigger>
             <TabsTrigger value="leads" data-testid="tab-leads">
               <Users className="h-4 w-4 mr-2" />
@@ -956,6 +1111,211 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Leads Tab */}
+          {/* Tabela RAT Tab */}
+          <TabsContent value="cnae-rat">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Tabela RAT por CNAE</CardTitle>
+                    <CardDescription>
+                      Alíquotas RAT (Risco Ambiental do Trabalho) por código CNAE — Decreto 10.410/2020
+                    </CardDescription>
+                  </div>
+                  <Dialog open={cnaeRatDialogOpen} onOpenChange={setCnaeRatDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button onClick={openNewCnaeRat} data-testid="button-new-cnae-rat">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo CNAE
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingCnaeRat ? "Editar CNAE RAT" : "Novo CNAE RAT"}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {editingCnaeRat ? "Altere os dados do CNAE" : "Adicione um novo código CNAE e sua alíquota RAT"}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Form {...cnaeRatForm}>
+                        <form onSubmit={cnaeRatForm.handleSubmit(handleCnaeRatSubmit)} className="space-y-4">
+                          <FormField
+                            control={cnaeRatForm.control}
+                            name="cnaeCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Código CNAE</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="0111-3/01" data-testid="input-cnae-code" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={cnaeRatForm.control}
+                            name="descricao"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Descrição</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Cultivo de arroz" data-testid="input-cnae-descricao" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={cnaeRatForm.control}
+                            name="aliquota"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Alíquota RAT (%)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-cnae-aliquota">
+                                      <SelectValue placeholder="Selecione a alíquota" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="0.01">1%</SelectItem>
+                                    <SelectItem value="0.02">2%</SelectItem>
+                                    <SelectItem value="0.03">3%</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <DialogFooter>
+                            <Button
+                              type="submit"
+                              disabled={createCnaeRatMutation.isPending || updateCnaeRatMutation.isPending}
+                              data-testid="button-save-cnae-rat"
+                            >
+                              {(createCnaeRatMutation.isPending || updateCnaeRatMutation.isPending) ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
+                              ) : (
+                                <><Save className="mr-2 h-4 w-4" />{editingCnaeRat ? "Atualizar" : "Criar"}</>
+                              )}
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {cnaeRatLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Buscar por código ou descrição..."
+                      value={cnaeRatSearch}
+                      onChange={(e) => { setCnaeRatSearch(e.target.value); setCnaeRatPage(1); }}
+                      data-testid="input-cnae-rat-search"
+                    />
+                    <div className="text-sm text-muted-foreground">
+                      {cnaeRatTotal} registros{cnaeRatSearch ? " encontrados" : " no total"} — Página {cnaeRatPage} de {cnaeRatTotalPages || 1}
+                    </div>
+                    <div className="rounded-md border max-h-[500px] overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Código CNAE</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>RAT (%)</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cnaeRatData.map((item) => (
+                            <TableRow key={item.id} data-testid={`row-cnae-rat-${item.id}`}>
+                              <TableCell className="font-mono">{item.cnaeCode}</TableCell>
+                              <TableCell>{item.descricao}</TableCell>
+                              <TableCell>{(parseFloat(item.aliquota) * 100).toFixed(0)}%</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditCnaeRat(item)}
+                                    data-testid={`button-edit-cnae-rat-${item.id}`}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive"
+                                        data-testid={`button-delete-cnae-rat-${item.id}`}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja excluir o CNAE {item.cnaeCode} — {item.descricao}?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => deleteCnaeRatMutation.mutate(item.id)}
+                                          data-testid={`button-confirm-delete-cnae-rat-${item.id}`}
+                                        >
+                                          Excluir
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {cnaeRatTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={cnaeRatPage <= 1}
+                          onClick={() => setCnaeRatPage((p) => Math.max(1, p - 1))}
+                          data-testid="button-cnae-rat-prev"
+                        >
+                          Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          {cnaeRatPage} / {cnaeRatTotalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={cnaeRatPage >= cnaeRatTotalPages}
+                          onClick={() => setCnaeRatPage((p) => Math.min(cnaeRatTotalPages, p + 1))}
+                          data-testid="button-cnae-rat-next"
+                        >
+                          Próxima
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="leads">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">

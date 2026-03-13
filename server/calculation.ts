@@ -7,6 +7,7 @@ export interface CalculationInput {
   params: CalculationParams;
   baseInputType?: "colaboradores" | "folha";
   folhaMedia?: number;
+  aliquotaRat?: number;
 }
 
 export interface CalculationResult {
@@ -24,7 +25,7 @@ export interface CalculationResult {
 }
 
 export function calculatePrevidenciario(input: CalculationInput): CalculationResult {
-  const { colaboradores, isDesonerada, fpas, params, baseInputType = "colaboradores", folhaMedia } = input;
+  const { colaboradores, isDesonerada, fpas, params, baseInputType = "colaboradores", folhaMedia, aliquotaRat: aliquotaRatInput } = input;
 
   const salarioMinimo = parseFloat(params.salarioMinimo);
   const percentualCreditoNormal = parseFloat(params.percentualCredito);
@@ -36,7 +37,7 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
   const mesesProjecao = params.mesesProjecao;
 
   const aliquotaTerceiros = parseFloat(fpas.aliquotaTerceiros);
-  const aliquotaRat = 0.02;
+  const aliquotaRat = aliquotaRatInput ?? 0.02;
   const aliquotaCpp = isDesonerada ? 0 : 0.20;
 
   const baseFolha = baseInputType === "folha" && typeof folhaMedia === "number"

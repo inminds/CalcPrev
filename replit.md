@@ -56,6 +56,9 @@ Parâmetros configuráveis: salário mínimo, percentuais de crédito, meses de 
 ### Fpas
 Tabela de códigos FPAS com alíquotas de terceiros.
 
+### CnaeRat
+Tabela de alíquotas RAT por código CNAE (Decreto 10.410/2020). Campos: cnaeCode (único), descricao, aliquota (0.01/0.02/0.03). Populada via seed com 1331 CNAEs do XLSX fornecido.
+
 ### EmailSettings (V1.1)
 Configurações de envio de e-mail: habilitado, remetente, assunto, template.
 
@@ -70,7 +73,8 @@ Configurações gerais: URL da política de privacidade.
 ### Públicas
 - `GET /api/fpas` - Lista todos os códigos FPAS
 - `GET /api/cnpj/:cnpj` - Consulta CNPJ via BrasilAPI
-- `POST /api/simulate` - Executa simulação previdenciária
+- `GET /api/cnae-rat` - Busca alíquota RAT por código CNAE (?code=0111301)
+- `POST /api/simulate` - Executa simulação previdenciária (agora recebe campo `cnae` opcional)
 - `GET /api/simulations/:id/pdf` - Gera PDF do diagnóstico
 
 ### Administrativas (requer autenticação)
@@ -88,11 +92,15 @@ Configurações gerais: URL da política de privacidade.
 - `PUT /api/admin/webhook-settings` - Atualiza configurações de webhook
 - `GET /api/admin/app-settings` - Obtém configurações do app (LGPD)
 - `PUT /api/admin/app-settings` - Atualiza configurações do app
+- `GET /api/admin/cnae-rat` - Lista todos os CNAEs RAT
+- `POST /api/admin/cnae-rat` - Cria novo CNAE RAT
+- `PUT /api/admin/cnae-rat/:id` - Atualiza CNAE RAT
+- `DELETE /api/admin/cnae-rat/:id` - Remove CNAE RAT
 
 ## Regras de Negócio (Cálculo)
 
 1. **Base da Folha** = Salário Mínimo × Quantidade de Colaboradores
-2. **RAT** = 2% (fixo para todos os cenários)
+2. **RAT** = Determinado pelo CNAE da empresa (1%, 2% ou 3%) via tabela cnae_rat. Fallback: 2% se CNAE não encontrado.
 3. **CPP** = 20% se NÃO desonerada, 0% se desonerada
 4. **Alíquota Total** = Alíquota FPAS (terceiros) + RAT (2%) + CPP (20% ou 0%)
    - Desonerada = Sim: 5,8% + 2% + 0% = **7,8%**
@@ -158,6 +166,14 @@ npm run db:push      # Sincroniza schema com banco de dados
 - CNAE 49-99 (Serviços) → FPAS 515
 
 ## Changelog
+
+### V1.5 (2026-03-13)
+- **Tabela RAT por CNAE**: RAT agora é dinâmico (1%, 2% ou 3%) baseado no CNAE da empresa, conforme Decreto 10.410/2020
+- **Seed CNAE RAT**: 1331 códigos CNAE populados via XLSX fornecido pelo usuário
+- **CRUD Admin Tabela RAT**: Nova aba "Tabela RAT" no backoffice com busca, criação, edição e exclusão com confirmação
+- **Cálculo dinâmico**: Motor de cálculo aceita `aliquotaRat` como parâmetro; endpoint `/api/simulate` faz lookup automático do CNAE
+- **Frontend**: CNAE armazenado no formulário (campo oculto), RAT efetivo exibido no resultado da simulação
+- **Fallback**: Se CNAE não encontrado na tabela, aplica 2% (comportamento anterior preservado)
 
 ### V1.4 (2026-03-13)
 - **Percentual de crédito diferenciado por desoneração**: Não desonerada = 28%, Desonerada = 76%

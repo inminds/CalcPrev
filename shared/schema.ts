@@ -115,6 +115,18 @@ export const appSettings = pgTable("app_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// CNAE RAT - Tabela de alíquotas RAT por CNAE (Decreto 10.410/2020)
+export const cnaeRat = pgTable("cnae_rat", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cnaeCode: text("cnae_code").notNull().unique(),
+  descricao: text("descricao").notNull(),
+  aliquota: decimal("aliquota", { precision: 5, scale: 4 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("cnae_rat_code_idx").on(table.cnaeCode),
+]);
+
 // Insert Schemas
 export const insertLeadSchema = createInsertSchema(leads).omit({
   id: true,
@@ -171,7 +183,17 @@ export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
   updatedAt: true,
 });
 
+export const insertCnaeRatSchema = createInsertSchema(cnaeRat).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  aliquota: z.enum(["0.01", "0.02", "0.03"], { message: "Alíquota deve ser 1%, 2% ou 3%" }),
+});
+
 // Types
+export type CnaeRat = typeof cnaeRat.$inferSelect;
+export type InsertCnaeRat = z.infer<typeof insertCnaeRatSchema>;
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 
@@ -202,6 +224,7 @@ export const calculatorFormSchema = z.object({
   razaoSocial: z.string().min(1, "Razão Social é obrigatória"),
   segmento: z.string().min(1, "Segmento é obrigatório"),
   fpasCode: z.string().min(1, "FPAS é obrigatório"),
+  cnae: z.string().optional(),
   isDesonerada: z.boolean(),
   baseInputType: z.enum(["colaboradores", "folha"]).default("colaboradores"),
   colaboradores: z.number().min(10, "Mínimo de 10 colaboradores").optional(),

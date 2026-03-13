@@ -102,7 +102,12 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
                   {baseValue}
                 </span>
               </div>
-              <div />
+              <div>
+                <span className="text-muted-foreground">{tx("RAT:", "RAT:")} </span>
+                <Badge variant="outline" className="ml-1" data-testid="badge-rat">
+                  {(parseFloat(simulation.aliquotaRat) * 100).toFixed(0)}%
+                </Badge>
+              </div>
               <div>
                 <span className="text-muted-foreground">{tx("Desonerada:", "Tax-exempt:")}</span>
                 <Badge

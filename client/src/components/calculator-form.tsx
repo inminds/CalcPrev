@@ -49,6 +49,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       razaoSocial: "",
       segmento: "",
       fpasCode: "515",
+      cnae: "",
       isDesonerada: false,
       baseInputType: "colaboradores",
       colaboradores: undefined,
@@ -130,6 +131,9 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
         form.setValue("segmento", data.segmento || "");
         if (data.fpasCode) {
           form.setValue("fpasCode", data.fpasCode);
+        }
+        if (data.cnae) {
+          form.setValue("cnae", data.cnae.toString());
         }
         toast({
           title: tx("Empresa encontrada", "Company found"),

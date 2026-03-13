@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import { CNAE_RAT_DATA } from "./cnae_rat_data";
 
 const DEFAULT_FPAS = [
   { code: "507", descricao: "Indústria em Geral", aliquotaTerceiros: "0.058" },
@@ -42,6 +43,21 @@ export async function seedDatabase() {
       console.log("Seeding calculation params...");
       await storage.upsertCalculationParams(DEFAULT_PARAMS);
       console.log("Calculation params seeded successfully");
+    }
+
+    const cnaeRatCount = await storage.getCnaeRatCount();
+    if (cnaeRatCount === 0) {
+      console.log("Seeding CNAE RAT data...");
+      let seeded = 0;
+      for (const item of CNAE_RAT_DATA) {
+        try {
+          await storage.createCnaeRat(item);
+          seeded++;
+        } catch (err) {
+          // Skip duplicates silently
+        }
+      }
+      console.log(`CNAE RAT data seeded: ${seeded} entries`);
     }
 
     console.log("Database seeding complete");

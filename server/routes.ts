@@ -8,7 +8,7 @@ import { sendLeadWebhook } from "./webhook-service";
 import { enqueueJob } from "./background-jobs";
 import { startAzureLogin, handleAzureCallback, buildAzureLogoutUrl, isAzureConfigured } from "./azure-auth";
 import { cnpjCache } from "./cnpj-cache";
-import { calculatorFormSchema, insertCalculationParamsSchema, insertFpasSchema, insertEmailSettingsSchema, insertWebhookSettingsSchema, insertAppSettingsSchema } from "@shared/schema";
+import { calculatorFormSchema, insertCalculationParamsSchema, insertFpasSchema, insertCnaeRatSchema, insertEmailSettingsSchema, insertWebhookSettingsSchema, insertAppSettingsSchema } from "@shared/schema";
 import { randomBytes } from "crypto";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
@@ -77,6 +77,24 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching FPAS:", error);
       res.status(500).json({ error: "Failed to fetch FPAS" });
+    }
+  });
+
+  app.get("/api/cnae-rat", async (req, res) => {
+    try {
+      const { code } = req.query;
+      if (code && typeof code === "string") {
+        const result = await storage.getCnaeRatByCode(code.replace(/[^\d]/g, "").padStart(7, "0"));
+        if (result) {
+          return res.json(result);
+        }
+        return res.status(404).json({ error: "CNAE not found in RAT table" });
+      }
+      const all = await storage.getAllCnaeRat();
+      res.json(all);
+    } catch (error) {
+      console.error("Error fetching CNAE RAT:", error);
+      res.status(500).json({ error: "Failed to fetch CNAE RAT" });
     }
   });
 
@@ -236,6 +254,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: "FPAS code not found" });
       }
 
+      let aliquotaRat = 0.02;
+      if (data.cnae) {
+        const cnaeClean = data.cnae.replace(/[^\d]/g, "").padStart(7, "0");
+        const cnaeRatData = await storage.getCnaeRatByCode(cnaeClean);
+        if (cnaeRatData) {
+          aliquotaRat = parseFloat(cnaeRatData.aliquota);
+        }
+      }
+
       const calculationResult = calculatePrevidenciario({
         colaboradores,
         isDesonerada: data.isDesonerada,
@@ -243,6 +270,7 @@ export async function registerRoutes(
         params: params,
         baseInputType,
         folhaMedia,
+        aliquotaRat,
       });
 
       const fpasDescricao = fpasData.descricao;
@@ -534,6 +562,65 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting FPAS:", error);
       res.status(500).json({ error: "Failed to delete FPAS" });
+    }
+  });
+
+  app.get("/api/admin/cnae-rat", adminAuth, async (req, res) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 50));
+      const search = (req.query.q as string) || undefined;
+      const result = await storage.getCnaeRatPaginated({ page, pageSize, search });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching CNAE RAT:", error);
+      res.status(500).json({ error: "Failed to fetch CNAE RAT" });
+    }
+  });
+
+  app.post("/api/admin/cnae-rat", adminAuth, async (req, res) => {
+    try {
+      const validation = insertCnaeRatSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const created = await storage.createCnaeRat(validation.data);
+      res.json(created);
+    } catch (error) {
+      console.error("Error creating CNAE RAT:", error);
+      res.status(500).json({ error: "Failed to create CNAE RAT" });
+    }
+  });
+
+  app.put("/api/admin/cnae-rat/:id", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (Array.isArray(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+      const validation = insertCnaeRatSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const updated = await storage.updateCnaeRat(id, validation.data);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating CNAE RAT:", error);
+      res.status(500).json({ error: "Failed to update CNAE RAT" });
+    }
+  });
+
+  app.delete("/api/admin/cnae-rat/:id", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (Array.isArray(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+      await storage.deleteCnaeRat(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting CNAE RAT:", error);
+      res.status(500).json({ error: "Failed to delete CNAE RAT" });
     }
   });
 

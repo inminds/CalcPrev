@@ -7,6 +7,7 @@ import {
   emailSettings,
   webhookSettings,
   appSettings,
+  cnaeRat,
   type Lead,
   type InsertLead,
   type CompanySnapshot,
@@ -23,8 +24,10 @@ import {
   type InsertWebhookSettings,
   type AppSettings,
   type InsertAppSettings,
+  type CnaeRat,
+  type InsertCnaeRat,
 } from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, or, ilike } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -69,6 +72,15 @@ export interface IStorage {
   // App Settings
   getAppSettings(): Promise<AppSettings | undefined>;
   upsertAppSettings(settings: InsertAppSettings): Promise<AppSettings>;
+
+  // CNAE RAT
+  getAllCnaeRat(): Promise<CnaeRat[]>;
+  getCnaeRatByCode(cnaeCode: string): Promise<CnaeRat | undefined>;
+  getCnaeRatPaginated(params: { page: number; pageSize: number; search?: string }): Promise<{ data: CnaeRat[]; total: number }>;
+  createCnaeRat(data: InsertCnaeRat): Promise<CnaeRat>;
+  updateCnaeRat(id: string, data: Partial<InsertCnaeRat>): Promise<CnaeRat>;
+  deleteCnaeRat(id: string): Promise<void>;
+  getCnaeRatCount(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -279,6 +291,70 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // CNAE RAT
+  async getAllCnaeRat(): Promise<CnaeRat[]> {
+    const db = await this.getDb();
+    return db.select().from(cnaeRat).orderBy(cnaeRat.cnaeCode);
+  }
+
+  async getCnaeRatByCode(cnaeCode: string): Promise<CnaeRat | undefined> {
+    const db = await this.getDb();
+    const [result] = await db.select().from(cnaeRat).where(eq(cnaeRat.cnaeCode, cnaeCode));
+    return result || undefined;
+  }
+
+  async getCnaeRatPaginated(params: { page: number; pageSize: number; search?: string }): Promise<{ data: CnaeRat[]; total: number }> {
+    const db = await this.getDb();
+    const { page, pageSize, search } = params;
+    const offset = (page - 1) * pageSize;
+
+    const whereClause = search
+      ? or(ilike(cnaeRat.cnaeCode, `%${search}%`), ilike(cnaeRat.descricao, `%${search}%`))
+      : undefined;
+
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(cnaeRat)
+      .where(whereClause);
+
+    const data = await db
+      .select()
+      .from(cnaeRat)
+      .where(whereClause)
+      .orderBy(cnaeRat.cnaeCode)
+      .limit(pageSize)
+      .offset(offset);
+
+    return { data, total: countResult?.count ?? 0 };
+  }
+
+  async createCnaeRat(data: InsertCnaeRat): Promise<CnaeRat> {
+    const db = await this.getDb();
+    const [created] = await db.insert(cnaeRat).values(data).returning();
+    return created;
+  }
+
+  async updateCnaeRat(id: string, data: Partial<InsertCnaeRat>): Promise<CnaeRat> {
+    const db = await this.getDb();
+    const [updated] = await db
+      .update(cnaeRat)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(cnaeRat.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCnaeRat(id: string): Promise<void> {
+    const db = await this.getDb();
+    await db.delete(cnaeRat).where(eq(cnaeRat.id, id));
+  }
+
+  async getCnaeRatCount(): Promise<number> {
+    const db = await this.getDb();
+    const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(cnaeRat);
+    return result?.count ?? 0;
+  }
+
   // Transactional simulation creation
   async createSimulationWithSnapshot(params: {
     lead: InsertLead | Lead;
@@ -320,6 +396,7 @@ export class InMemoryStorage implements IStorage {
   private emailSettingsData?: EmailSettings;
   private webhookSettingsData?: WebhookSettings;
   private appSettingsData?: AppSettings;
+  private cnaeRatData: CnaeRat[] = [];
 
   async createLead(lead: InsertLead): Promise<Lead> {
     const created: Lead = {
@@ -587,6 +664,63 @@ export class InMemoryStorage implements IStorage {
       updatedAt: now,
     };
     return this.appSettingsData;
+  }
+
+  async getAllCnaeRat(): Promise<CnaeRat[]> {
+    return [...this.cnaeRatData].sort((a, b) => a.cnaeCode.localeCompare(b.cnaeCode));
+  }
+
+  async getCnaeRatByCode(cnaeCode: string): Promise<CnaeRat | undefined> {
+    return this.cnaeRatData.find((entry) => entry.cnaeCode === cnaeCode);
+  }
+
+  async getCnaeRatPaginated(params: { page: number; pageSize: number; search?: string }): Promise<{ data: CnaeRat[]; total: number }> {
+    const { page, pageSize, search } = params;
+    let filtered = [...this.cnaeRatData];
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(
+        (e) => e.cnaeCode.includes(q) || e.descricao.toLowerCase().includes(q)
+      );
+    }
+    filtered.sort((a, b) => a.cnaeCode.localeCompare(b.cnaeCode));
+    const total = filtered.length;
+    const data = filtered.slice((page - 1) * pageSize, page * pageSize);
+    return { data, total };
+  }
+
+  async createCnaeRat(data: InsertCnaeRat): Promise<CnaeRat> {
+    if (this.cnaeRatData.some((entry) => entry.cnaeCode === data.cnaeCode)) {
+      throw new Error(`CNAE RAT code already exists: ${data.cnaeCode}`);
+    }
+    const now = new Date();
+    const created: CnaeRat = {
+      id: randomUUID(),
+      cnaeCode: data.cnaeCode,
+      descricao: data.descricao,
+      aliquota: data.aliquota,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.cnaeRatData.push(created);
+    return created;
+  }
+
+  async updateCnaeRat(id: string, data: Partial<InsertCnaeRat>): Promise<CnaeRat> {
+    const index = this.cnaeRatData.findIndex((entry) => entry.id === id);
+    if (index < 0) throw new Error("CNAE RAT not found");
+    const current = this.cnaeRatData[index];
+    const updated: CnaeRat = { ...current, ...data, updatedAt: new Date() };
+    this.cnaeRatData[index] = updated;
+    return updated;
+  }
+
+  async deleteCnaeRat(id: string): Promise<void> {
+    this.cnaeRatData = this.cnaeRatData.filter((entry) => entry.id !== id);
+  }
+
+  async getCnaeRatCount(): Promise<number> {
+    return this.cnaeRatData.length;
   }
 }
 
