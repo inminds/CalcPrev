@@ -40,7 +40,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
   const [cnpjInput, setCnpjInput] = useState("");
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
   const [lastSearchedCnpj, setLastSearchedCnpj] = useState("");
-  const [colaboradoresInput, setColaboradoresInput] = useState("10");
+  const [colaboradoresInput, setColaboradoresInput] = useState("");
 
   const form = useForm<CalculatorFormData>({
     resolver: zodResolver(calculatorFormSchema),
@@ -51,7 +51,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       fpasCode: "515",
       isDesonerada: false,
       baseInputType: "colaboradores",
-      colaboradores: 10,
+      colaboradores: undefined,
       folhaMedia: undefined,
       name: "",
       email: "",
@@ -295,11 +295,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
                           onValueChange={(value) => {
                             field.onChange(value);
                             if (value === "colaboradores") {
-                              const currentColaboradores = form.getValues("colaboradores");
-                              if (currentColaboradores === undefined || currentColaboradores === null) {
-                                form.setValue("colaboradores", 10);
-                                setColaboradoresInput("10");
-                              }
+                              // keep user-typed value
                             } else {
                               const nextFolha = form.getValues("folhaMedia") || 15000;
                               form.setValue("folhaMedia", nextFolha);

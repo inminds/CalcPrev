@@ -386,6 +386,7 @@ export class InMemoryStorage implements IStorage {
       creditoVerde: simulation.creditoVerde,
       creditoAmarelo: simulation.creditoAmarelo,
       creditoVermelho: simulation.creditoVermelho,
+      aliquotaCpp: simulation.aliquotaCpp ?? "0",
       createdAt: new Date(),
     };
     this.simulationsData.push(created);
