@@ -62,6 +62,7 @@ import type { CalculationParams, Fpas, Lead, EmailSettings, WebhookSettings, App
 const paramsSchema = z.object({
   salarioMinimo: z.string().min(1, "Obrigatório"),
   percentualCredito: z.string().min(1, "Obrigatório"),
+  percentualCreditoDesonerada: z.string().min(1, "Obrigatório"),
   percentualVerde: z.string().min(1, "Obrigatório"),
   percentualAmarelo: z.string().min(1, "Obrigatório"),
   percentualVermelho: z.string().min(1, "Obrigatório"),
@@ -222,6 +223,7 @@ export default function AdminDashboard() {
     defaultValues: {
       salarioMinimo: "",
       percentualCredito: "",
+      percentualCreditoDesonerada: "",
       percentualVerde: "",
       percentualAmarelo: "",
       percentualVermelho: "",
@@ -271,6 +273,7 @@ export default function AdminDashboard() {
       paramsForm.reset({
         salarioMinimo: params.salarioMinimo.toString(),
         percentualCredito: (parseFloat(params.percentualCredito) * 100).toString(),
+        percentualCreditoDesonerada: (parseFloat(params.percentualCreditoDesonerada ?? "0.76") * 100).toString(),
         percentualVerde: (parseFloat(params.percentualVerde) * 100).toString(),
         percentualAmarelo: (parseFloat(params.percentualAmarelo) * 100).toString(),
         percentualVermelho: (parseFloat(params.percentualVermelho) * 100).toString(),
@@ -315,6 +318,7 @@ export default function AdminDashboard() {
       const payload = {
         salarioMinimo: data.salarioMinimo,
         percentualCredito: (parseFloat(data.percentualCredito) / 100).toString(),
+        percentualCreditoDesonerada: (parseFloat(data.percentualCreditoDesonerada) / 100).toString(),
         percentualVerde: (parseFloat(data.percentualVerde) / 100).toString(),
         percentualAmarelo: (parseFloat(data.percentualAmarelo) / 100).toString(),
         percentualVermelho: (parseFloat(data.percentualVermelho) / 100).toString(),
@@ -653,7 +657,7 @@ export default function AdminDashboard() {
                           name="percentualCredito"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Percentual de Crédito (%)</FormLabel>
+                              <FormLabel>% Crédito (Não Desonerada)</FormLabel>
                               <FormControl>
                                 <Input
                                   {...field}
@@ -663,7 +667,28 @@ export default function AdminDashboard() {
                                 />
                               </FormControl>
                               <FormDescription>
-                                Percentual de crédito sobre o total (padrão: 20%)
+                                Percentual de crédito para empresas não desoneradas (padrão: 28%)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={paramsForm.control}
+                          name="percentualCreditoDesonerada"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>% Crédito (Desonerada)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  step="0.1"
+                                  data-testid="input-percentual-credito-desonerada"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Percentual de crédito para empresas desoneradas (padrão: 76%)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>

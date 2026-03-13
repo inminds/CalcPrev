@@ -98,7 +98,9 @@ Configurações gerais: URL da política de privacidade.
    - Desonerada = Sim: 5,8% + 2% + 0% = **7,8%**
    - Desonerada = Não: 5,8% + 2% + 20% = **27,8%**
 5. **Imposto Mensal** = Base da Folha × Alíquota Total
-6. **Crédito Estimado Mensal** = Imposto Mensal × 20%
+6. **Crédito Estimado Mensal** = Imposto Mensal × percentualCredito
+   - Desonerada = Não: percentualCredito = 28%
+   - Desonerada = Sim: percentualCreditoDesonerada = 76%
 7. **Total Crédito Projetado** = Crédito Estimado Mensal × 65 meses
 8. **Distribuição Semáforo**:
    - Verde (baixo risco): 15%
@@ -156,6 +158,11 @@ npm run db:push      # Sincroniza schema com banco de dados
 - CNAE 49-99 (Serviços) → FPAS 515
 
 ## Changelog
+
+### V1.4 (2026-03-13)
+- **Percentual de crédito diferenciado por desoneração**: Não desonerada = 28%, Desonerada = 76%
+- **Novo parâmetro admin**: `percentualCreditoDesonerada` configurável no backoffice
+- **Valores validados contra planilha original**: Desonerada=Não → crédito mensal 28% do imposto; Desonerada=Sim → crédito mensal 76% do imposto
 
 ### V1.3 (2026-03-13)
 - **Correção Cálculo RAT/CPP**: RAT fixado em 2% para todos os cenários; CPP 20% adicionado para empresas NÃO desoneradas

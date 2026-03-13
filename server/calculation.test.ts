@@ -5,7 +5,8 @@ import type { CalculationParams, Fpas } from '@shared/schema';
 const baseParams: CalculationParams = {
   id: '1',
   salarioMinimo: '1621.00',
-  percentualCredito: '0.20',
+  percentualCredito: '0.28',
+  percentualCreditoDesonerada: '0.76',
   percentualVerde: '0.15',
   percentualAmarelo: '0.35',
   percentualVermelho: '0.50',
@@ -28,7 +29,7 @@ describe('calculatePrevidenciario', () => {
     const baseFolha = 1621 * 50;
     const aliquotaTotal = 0.058 + 0.02 + 0.20;
     const impostoMensal = baseFolha * aliquotaTotal;
-    const creditoMensal = impostoMensal * 0.20;
+    const creditoMensal = impostoMensal * 0.28;
     const totalProjetado = creditoMensal * 65;
 
     expect(result.baseFolha).toBe(baseFolha.toFixed(2));
@@ -40,7 +41,7 @@ describe('calculatePrevidenciario', () => {
     expect(result.creditoEstimadoTotal).toBe(totalProjetado.toFixed(2));
   });
 
-  it('calculates correctly for desonerada company (RAT 2% + FPAS, no CPP)', () => {
+  it('calculates correctly for desonerada company using 76% credit rate', () => {
     const result = calculatePrevidenciario({
       colaboradores: 50,
       isDesonerada: true,
@@ -51,7 +52,7 @@ describe('calculatePrevidenciario', () => {
     const baseFolha = 1621 * 50;
     const aliquotaTotal = 0.058 + 0.02;
     const impostoMensal = baseFolha * aliquotaTotal;
-    const creditoMensal = impostoMensal * 0.20;
+    const creditoMensal = impostoMensal * 0.76;
     const totalProjetado = creditoMensal * 65;
 
     expect(result.baseFolha).toBe(baseFolha.toFixed(2));
@@ -63,32 +64,34 @@ describe('calculatePrevidenciario', () => {
     expect(result.creditoEstimadoTotal).toBe(totalProjetado.toFixed(2));
   });
 
-  it('matches spreadsheet values for desonerada=Sim (7.8% total)', () => {
+  it('matches spreadsheet for desonerada=Não (8623 colaboradores, 27.8%)', () => {
+    const params8623: CalculationParams = { ...baseParams, salarioMinimo: '1621.00' };
     const result = calculatePrevidenciario({
-      colaboradores: 50,
-      isDesonerada: true,
-      fpas: fpas515,
-      params: baseParams,
-    });
-
-    expect(result.baseFolha).toBe('81050.00');
-    expect(result.impostoMensalEstimado).toBe('6321.90');
-    expect(result.totalProjetado).toBe('1264.38');
-    expect(result.creditoEstimadoTotal).toBe('82184.70');
-  });
-
-  it('matches spreadsheet values for desonerada=Não (27.8% total)', () => {
-    const result = calculatePrevidenciario({
-      colaboradores: 50,
+      colaboradores: 8623,
       isDesonerada: false,
       fpas: fpas515,
-      params: baseParams,
+      params: params8623,
     });
 
-    expect(result.baseFolha).toBe('81050.00');
-    expect(result.impostoMensalEstimado).toBe('22531.90');
-    expect(result.totalProjetado).toBe('4506.38');
-    expect(result.creditoEstimadoTotal).toBe('292914.70');
+    expect(result.baseFolha).toBe('13977883.00');
+    expect(result.impostoMensalEstimado).toBe('3885851.47');
+    expect(result.totalProjetado).toBe('1088038.41');
+    expect(result.creditoEstimadoTotal).toBe('70722496.83');
+  });
+
+  it('matches spreadsheet for desonerada=Sim (8623 colaboradores, 7.8%)', () => {
+    const params8623: CalculationParams = { ...baseParams, salarioMinimo: '1621.00' };
+    const result = calculatePrevidenciario({
+      colaboradores: 8623,
+      isDesonerada: true,
+      fpas: fpas515,
+      params: params8623,
+    });
+
+    expect(result.baseFolha).toBe('13977883.00');
+    expect(result.impostoMensalEstimado).toBe('1090274.87');
+    expect(result.totalProjetado).toBe('828608.90');
+    expect(result.creditoEstimadoTotal).toBe('53859578.78');
   });
 
   it('distributes semaforo correctly', () => {

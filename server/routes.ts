@@ -223,6 +223,7 @@ export async function registerRoutes(
         params = await storage.upsertCalculationParams({
           salarioMinimo: "1412.00",
           percentualCredito: "0.20",
+          percentualCreditoDesonerada: "0.76",
           percentualVerde: "0.15",
           percentualAmarelo: "0.35",
           percentualVermelho: "0.50",
@@ -416,6 +417,7 @@ export async function registerRoutes(
         params = await storage.upsertCalculationParams({
           salarioMinimo: "1412.00",
           percentualCredito: "0.20",
+          percentualCreditoDesonerada: "0.76",
           percentualVerde: "0.15",
           percentualAmarelo: "0.35",
           percentualVermelho: "0.50",

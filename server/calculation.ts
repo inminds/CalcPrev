@@ -27,7 +27,9 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
   const { colaboradores, isDesonerada, fpas, params, baseInputType = "colaboradores", folhaMedia } = input;
 
   const salarioMinimo = parseFloat(params.salarioMinimo);
-  const percentualCredito = parseFloat(params.percentualCredito);
+  const percentualCreditoNormal = parseFloat(params.percentualCredito);
+  const percentualCreditoDesonerada = parseFloat(params.percentualCreditoDesonerada ?? "0.76");
+  const percentualCredito = isDesonerada ? percentualCreditoDesonerada : percentualCreditoNormal;
   const percentualVerde = parseFloat(params.percentualVerde);
   const percentualAmarelo = parseFloat(params.percentualAmarelo);
   const percentualVermelho = parseFloat(params.percentualVermelho);

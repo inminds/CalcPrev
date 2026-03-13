@@ -64,7 +64,8 @@ export const simulations = pgTable("simulations", {
 export const calculationParams = pgTable("calculation_params", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   salarioMinimo: decimal("salario_minimo", { precision: 10, scale: 2 }).notNull(),
-  percentualCredito: decimal("percentual_credito", { precision: 5, scale: 4 }).notNull(), // Ex: 0.20
+  percentualCredito: decimal("percentual_credito", { precision: 5, scale: 4 }).notNull(), // Ex: 0.28
+  percentualCreditoDesonerada: decimal("percentual_credito_desonerada", { precision: 5, scale: 4 }).notNull().default("0.76"),
   percentualVerde: decimal("percentual_verde", { precision: 5, scale: 4 }).notNull(), // Ex: 0.15
   percentualAmarelo: decimal("percentual_amarelo", { precision: 5, scale: 4 }).notNull(), // Ex: 0.35
   percentualVermelho: decimal("percentual_vermelho", { precision: 5, scale: 4 }).notNull(), // Ex: 0.50
