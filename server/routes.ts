@@ -272,6 +272,7 @@ export async function registerRoutes(
           salarioMinimo: params.salarioMinimo,
           aliquotaFpas: calculationResult.aliquotaFpas,
           aliquotaRat: calculationResult.aliquotaRat,
+          aliquotaCpp: calculationResult.aliquotaCpp,
           mesesProjetados: calculationResult.mesesProjetados,
           baseInputType,
           folhaMedia: folhaMediaDb,

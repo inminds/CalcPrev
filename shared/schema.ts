@@ -39,6 +39,7 @@ export const simulations = pgTable("simulations", {
   salarioMinimo: decimal("salario_minimo", { precision: 10, scale: 2 }).notNull(),
   aliquotaFpas: decimal("aliquota_fpas", { precision: 5, scale: 4 }).notNull(),
   aliquotaRat: decimal("aliquota_rat", { precision: 5, scale: 4 }).notNull(),
+  aliquotaCpp: decimal("aliquota_cpp", { precision: 5, scale: 4 }).notNull().default("0"),
   mesesProjetados: integer("meses_projetados").notNull(),
   baseInputType: text("base_input_type").notNull().default("colaboradores"),
   folhaMedia: decimal("folha_media", { precision: 15, scale: 2 }),

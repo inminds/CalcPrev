@@ -13,6 +13,7 @@ export interface CalculationResult {
   baseFolha: string;
   aliquotaFpas: string;
   aliquotaRat: string;
+  aliquotaCpp: string;
   mesesProjetados: number;
   impostoMensalEstimado: string;
   totalProjetado: string;
@@ -33,13 +34,14 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
   const mesesProjecao = params.mesesProjecao;
 
   const aliquotaTerceiros = parseFloat(fpas.aliquotaTerceiros);
-  const aliquotaRat = isDesonerada ? 0 : 0.03;
+  const aliquotaRat = 0.02;
+  const aliquotaCpp = isDesonerada ? 0 : 0.20;
 
   const baseFolha = baseInputType === "folha" && typeof folhaMedia === "number"
     ? folhaMedia
     : salarioMinimo * colaboradores;
 
-  const aliquotaTotal = aliquotaTerceiros + aliquotaRat;
+  const aliquotaTotal = aliquotaTerceiros + aliquotaRat + aliquotaCpp;
   const impostoMensalEstimado = baseFolha * aliquotaTotal;
 
   const creditoEstimadoMensal = impostoMensalEstimado * percentualCredito;
@@ -54,6 +56,7 @@ export function calculatePrevidenciario(input: CalculationInput): CalculationRes
     baseFolha: baseFolha.toFixed(2),
     aliquotaFpas: aliquotaTerceiros.toFixed(4),
     aliquotaRat: aliquotaRat.toFixed(4),
+    aliquotaCpp: aliquotaCpp.toFixed(4),
     mesesProjetados: mesesProjecao,
     impostoMensalEstimado: impostoMensalEstimado.toFixed(2),
     totalProjetado: creditoEstimadoMensal.toFixed(2),

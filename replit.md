@@ -92,11 +92,15 @@ Configurações gerais: URL da política de privacidade.
 ## Regras de Negócio (Cálculo)
 
 1. **Base da Folha** = Salário Mínimo × Quantidade de Colaboradores
-2. **Alíquota Total** = Alíquota FPAS (terceiros) + RAT (3% se não desonerada)
-3. **Imposto Mensal** = Base da Folha × Alíquota Total
-4. **Crédito Estimado Mensal** = Imposto Mensal × 20%
-5. **Total Crédito Projetado** = Crédito Estimado Mensal × 65 meses
-6. **Distribuição Semáforo**:
+2. **RAT** = 2% (fixo para todos os cenários)
+3. **CPP** = 20% se NÃO desonerada, 0% se desonerada
+4. **Alíquota Total** = Alíquota FPAS (terceiros) + RAT (2%) + CPP (20% ou 0%)
+   - Desonerada = Sim: 5,8% + 2% + 0% = **7,8%**
+   - Desonerada = Não: 5,8% + 2% + 20% = **27,8%**
+5. **Imposto Mensal** = Base da Folha × Alíquota Total
+6. **Crédito Estimado Mensal** = Imposto Mensal × 20%
+7. **Total Crédito Projetado** = Crédito Estimado Mensal × 65 meses
+8. **Distribuição Semáforo**:
    - Verde (baixo risco): 15%
    - Amarelo (médio risco): 35%
    - Vermelho (alto risco): 50%
@@ -152,6 +156,12 @@ npm run db:push      # Sincroniza schema com banco de dados
 - CNAE 49-99 (Serviços) → FPAS 515
 
 ## Changelog
+
+### V1.3 (2026-03-13)
+- **Correção Cálculo RAT/CPP**: RAT fixado em 2% para todos os cenários; CPP 20% adicionado para empresas NÃO desoneradas
+- **Fórmula corrigida**: Desonerada=Sim → 7,8% (RAT 2% + FPAS 5,8%); Desonerada=Não → 27,8% (CPP 20% + RAT 2% + FPAS 5,8%)
+- **Salário Mínimo atualizado**: R$ 1.621,00 (via admin)
+- **Schema**: Novo campo `aliquota_cpp` na tabela `simulations`
 
 ### V1.2 (2026-03-03)
 - **Identidade Visual Padronizada**: Header, Footer e PublicLayout como componentes reutilizáveis
