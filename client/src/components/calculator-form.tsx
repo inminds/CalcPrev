@@ -40,7 +40,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
   const [cnpjInput, setCnpjInput] = useState("");
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
   const [lastSearchedCnpj, setLastSearchedCnpj] = useState("");
-  const [colaboradoresInput, setColaboradoresInput] = useState("");
+  const [colaboradoresInput, setColaboradoresInput] = useState("10");
 
   const form = useForm<CalculatorFormData>({
     resolver: zodResolver(calculatorFormSchema),
@@ -52,7 +52,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
       cnae: "",
       isDesonerada: false,
       baseInputType: "colaboradores",
-      colaboradores: undefined,
+      colaboradores: 10,
       folhaMedia: undefined,
       name: "",
       email: "",
