@@ -491,14 +491,14 @@ export function generatePDF(
       y += 10;
 
       doc.rect(margin - 4, y - 2, 4, 12).fill(MSH_BEIGE);
-      doc.fillColor(MSH_TEXT).fontSize(9).font("Helvetica-Bold").text("Aviso Legal", margin + 8, y);
+      doc.fillColor(MSH_TEXT).fontSize(8).font("Helvetica-Bold").text("Aviso Legal", margin + 8, y);
 
-      y += 16;
+      y += 14;
 
       doc
-        .fontSize(8)
+        .fontSize(7)
         .font("Helvetica")
-        .fillColor(MSH_TEXT)
+        .fillColor(MSH_TEXT_SECONDARY)
         .text(
           "Os valores apresentados são estimativas baseadas nos parâmetros informados e têm caráter meramente ilustrativo. " +
             "Os cálculos não constituem garantia de recuperação de crédito e estão sujeitos a análise técnica e jurídica detalhada. " +
