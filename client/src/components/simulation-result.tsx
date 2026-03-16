@@ -85,21 +85,9 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">{tx("Segmento:", "Segment:")}</span>
-                <span className="ml-2 font-medium" data-testid="text-segmento">
-                  {companySnapshot.segmento}
-                </span>
-              </div>
-              <div>
                 <span className="text-muted-foreground">{tx("Razão Social:", "Company Name:")}</span>
                 <span className="ml-2 font-medium" data-testid="text-razao-social">
                   {companySnapshot.razaoSocial}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">{baseLabel}:</span>
-                <span className="ml-2 font-medium" data-testid="text-base-calculo">
-                  {baseValue}
                 </span>
               </div>
               <div>
@@ -117,6 +105,18 @@ export function SimulationResultDisplay({ result, onNewSimulation }: SimulationR
                 >
                   {companySnapshot.isDesonerada ? tx("Sim", "Yes") : tx("Não", "No")}
                 </Badge>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{tx("Segmento:", "Segment:")}</span>
+                <span className="ml-2 font-medium" data-testid="text-segmento">
+                  {companySnapshot.segmento}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{baseLabel}:</span>
+                <span className="ml-2 font-medium" data-testid="text-base-calculo">
+                  {baseValue}
+                </span>
               </div>
             </div>
           </div>
