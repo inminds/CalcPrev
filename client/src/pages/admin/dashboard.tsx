@@ -19,6 +19,7 @@ import {
   Webhook,
   Mail,
   Link2,
+  Eye,
 } from "lucide-react";
 import {
   Form,
@@ -55,9 +56,10 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SimulationResultDisplay } from "@/components/simulation-result";
 import { formatCurrency, formatDate, formatPercentage } from "@/lib/formatters";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { CalculationParams, Fpas, Lead, EmailSettings, WebhookSettings, AppSettings, CnaeRat } from "@shared/schema";
+import type { CalculationParams, Fpas, Lead, EmailSettings, WebhookSettings, AppSettings, CnaeRat, SimulationResult } from "@shared/schema";
 import {
   Select,
   SelectContent,
@@ -144,6 +146,8 @@ export default function AdminDashboard() {
   const [editingCnaeRat, setEditingCnaeRat] = useState<CnaeRat | null>(null);
   const [cnaeRatSearch, setCnaeRatSearch] = useState("");
   const [cnaeRatPage, setCnaeRatPage] = useState(1);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [selectedSimulationId, setSelectedSimulationId] = useState<string | null>(null);
   const cnaeRatPageSize = 50;
 
   const token = sessionStorage.getItem("adminToken");
@@ -216,6 +220,39 @@ export default function AdminDashboard() {
       return res.json();
     },
     enabled: isAuthenticated === true,
+  });
+
+  type SimulationWithSnapshot = {
+    id: string;
+    contactName: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+    creditoEstimadoTotal: string;
+    totalProjetado: string;
+    impostoMensalEstimado: string;
+    mesesProjetados: number;
+    createdAt: string;
+    companySnapshot: { razaoSocial: string; cnpj: string; isDesonerada: boolean };
+  };
+
+  const { data: leadSimulations, isLoading: leadSimulationsLoading } = useQuery<SimulationWithSnapshot[]>({
+    queryKey: ["/api/admin/leads", selectedLeadId, "simulations"],
+    queryFn: async () => {
+      const res = await fetchAdmin(`/api/admin/leads/${selectedLeadId}/simulations`);
+      if (!res.ok) throw new Error("Failed to fetch simulations");
+      return res.json();
+    },
+    enabled: !!selectedLeadId,
+  });
+
+  const { data: selectedSimulation, isLoading: selectedSimulationLoading } = useQuery<SimulationResult>({
+    queryKey: ["/api/admin/simulations", selectedSimulationId],
+    queryFn: async () => {
+      const res = await fetchAdmin(`/api/admin/simulations/${selectedSimulationId}`);
+      if (!res.ok) throw new Error("Failed to fetch simulation");
+      return res.json();
+    },
+    enabled: !!selectedSimulationId,
   });
 
   const { data: emailSettings, isLoading: emailSettingsLoading } = useQuery<EmailSettings>({
@@ -326,11 +363,11 @@ export default function AdminDashboard() {
     if (params) {
       paramsForm.reset({
         salarioMinimo: params.salarioMinimo.toString(),
-        percentualCredito: (parseFloat(params.percentualCredito) * 100).toString(),
-        percentualCreditoDesonerada: (parseFloat(params.percentualCreditoDesonerada ?? "0.76") * 100).toString(),
-        percentualVerde: (parseFloat(params.percentualVerde) * 100).toString(),
-        percentualAmarelo: (parseFloat(params.percentualAmarelo) * 100).toString(),
-        percentualVermelho: (parseFloat(params.percentualVermelho) * 100).toString(),
+        percentualCredito: parseFloat((parseFloat(params.percentualCredito) * 100).toFixed(2)).toString(),
+        percentualCreditoDesonerada: parseFloat((parseFloat(params.percentualCreditoDesonerada ?? "0.76") * 100).toFixed(2)).toString(),
+        percentualVerde: parseFloat((parseFloat(params.percentualVerde) * 100).toFixed(2)).toString(),
+        percentualAmarelo: parseFloat((parseFloat(params.percentualAmarelo) * 100).toFixed(2)).toString(),
+        percentualVermelho: parseFloat((parseFloat(params.percentualVermelho) * 100).toFixed(2)).toString(),
         mesesProjecao: params.mesesProjecao.toString(),
       });
     }
@@ -371,11 +408,11 @@ export default function AdminDashboard() {
     mutationFn: async (data: ParamsFormData) => {
       const payload = {
         salarioMinimo: data.salarioMinimo,
-        percentualCredito: (parseFloat(data.percentualCredito) / 100).toString(),
-        percentualCreditoDesonerada: (parseFloat(data.percentualCreditoDesonerada) / 100).toString(),
-        percentualVerde: (parseFloat(data.percentualVerde) / 100).toString(),
-        percentualAmarelo: (parseFloat(data.percentualAmarelo) / 100).toString(),
-        percentualVermelho: (parseFloat(data.percentualVermelho) / 100).toString(),
+        percentualCredito: parseFloat((parseFloat(data.percentualCredito) / 100).toFixed(4)).toString(),
+        percentualCreditoDesonerada: parseFloat((parseFloat(data.percentualCreditoDesonerada) / 100).toFixed(4)).toString(),
+        percentualVerde: parseFloat((parseFloat(data.percentualVerde) / 100).toFixed(4)).toString(),
+        percentualAmarelo: parseFloat((parseFloat(data.percentualAmarelo) / 100).toFixed(4)).toString(),
+        percentualVermelho: parseFloat((parseFloat(data.percentualVermelho) / 100).toFixed(4)).toString(),
         mesesProjecao: parseInt(data.mesesProjecao),
       };
       const res = await fetchAdmin("/api/admin/params", {
@@ -1349,6 +1386,7 @@ export default function AdminDashboard() {
                           <TableHead>Telefone</TableHead>
                           <TableHead>Simulações</TableHead>
                           <TableHead>Data</TableHead>
+                          <TableHead>Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1361,6 +1399,17 @@ export default function AdminDashboard() {
                             <TableCell>{lead.phone || "-"}</TableCell>
                             <TableCell>{lead.simulationsCount}</TableCell>
                             <TableCell>{formatDate(lead.createdAt)}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedLeadId(lead.id)}
+                                className="gap-1.5"
+                              >
+                                <Eye className="h-4 w-4" />
+                                Ver
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -1733,6 +1782,93 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Dialog 1: Lista de simulações do lead */}
+        <Dialog open={!!selectedLeadId && !selectedSimulationId} onOpenChange={(open) => { if (!open) setSelectedLeadId(null); }}>
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>Simulações</DialogTitle>
+              <DialogDescription>
+                Selecione uma simulação para visualizar
+              </DialogDescription>
+            </DialogHeader>
+            {leadSimulationsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : !leadSimulations?.length ? (
+              <p className="text-center py-8 text-muted-foreground">Nenhuma simulação encontrada.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Regime</TableHead>
+                      <TableHead>Crédito Total</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leadSimulations.map((sim) => (
+                      <TableRow key={sim.id}>
+                        <TableCell>
+                          <div className="font-medium">{sim.companySnapshot.razaoSocial}</div>
+                          <div className="text-xs text-muted-foreground">{sim.companySnapshot.cnpj}</div>
+                        </TableCell>
+                        <TableCell>{sim.contactEmail || "-"}</TableCell>
+                        <TableCell>{sim.contactPhone || "-"}</TableCell>
+                        <TableCell>{sim.companySnapshot.isDesonerada ? "Desonerada" : "Não Desonerada"}</TableCell>
+                        <TableCell className="font-semibold text-primary">{formatCurrency(parseFloat(sim.creditoEstimadoTotal))}</TableCell>
+                        <TableCell>{formatDate(sim.createdAt)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setSelectedSimulationId(sim.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            Ver
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedLeadId(null)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog 2: Detalhe completo da simulação */}
+        <Dialog open={!!selectedSimulationId} onOpenChange={(open) => { if (!open) setSelectedSimulationId(null); }}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Resultado da Simulação</DialogTitle>
+              <DialogDescription>
+                Diagnóstico previdenciário completo
+              </DialogDescription>
+            </DialogHeader>
+            {selectedSimulationLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : selectedSimulation ? (
+              <SimulationResultDisplay
+                result={selectedSimulation}
+                onNewSimulation={() => setSelectedSimulationId(null)}
+              />
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
       </main>
     </div>
   );

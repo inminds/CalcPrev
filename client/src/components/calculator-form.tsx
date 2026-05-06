@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { calculatorFormSchema, type CalculatorFormData, type SimulationResult, type Fpas, type AppSettings } from "@shared/schema";
-import { formatCNPJ, formatPhone, unformatCNPJ } from "@/lib/formatters";
+import { formatCNPJ, formatPhone, unformatCNPJ, isValidCNPJ } from "@/lib/formatters";
 import { apiRequest } from "@/lib/queryClient";
 import { useI18n } from "@/lib/i18n";
 
@@ -529,7 +529,7 @@ export function CalculatorForm({ onSuccess }: CalculatorFormProps) {
               type="submit"
               className="w-full"
               size="lg"
-              disabled={simulationMutation.isPending || !form.watch("lgpdConsent")}
+              disabled={simulationMutation.isPending || !form.watch("lgpdConsent") || !isValidCNPJ(form.watch("cnpj"))}
               data-testid="button-submit"
             >
               {simulationMutation.isPending ? (

@@ -275,9 +275,10 @@ export async function registerRoutes(
 
       const fpasDescricao = fpasData.descricao;
 
-      // Get existing lead or prepare new lead data
-      const existingLead = await storage.getLeadByEmail(data.email);
+      // Get existing lead or prepare new lead data — grouped by CNPJ
+      const existingLead = await storage.getLeadByCnpj(data.cnpj);
       const leadData = existingLead || {
+        cnpj: data.cnpj,
         name: data.name,
         email: data.email,
         phone: data.phone || null,
@@ -298,6 +299,9 @@ export async function registerRoutes(
           folhaMedia: folhaMediaDb,
         },
         simulation: {
+          contactName: data.name,
+          contactEmail: data.email,
+          contactPhone: data.phone || null,
           salarioMinimo: params.salarioMinimo,
           aliquotaFpas: calculationResult.aliquotaFpas,
           aliquotaRat: calculationResult.aliquotaRat,
@@ -490,6 +494,27 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching leads:", error);
       res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  app.get("/api/admin/simulations/:id", adminAuth, async (req, res) => {
+    try {
+      const result = await storage.getSimulationsWithDetails(req.params.id);
+      if (!result) return res.status(404).json({ error: "Simulation not found" });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching simulation:", error);
+      res.status(500).json({ error: "Failed to fetch simulation" });
+    }
+  });
+
+  app.get("/api/admin/leads/:id/simulations", adminAuth, async (req, res) => {
+    try {
+      const sims = await storage.getSimulationsByLeadId(req.params.id);
+      res.json(sims);
+    } catch (error) {
+      console.error("Error fetching simulations for lead:", error);
+      res.status(500).json({ error: "Failed to fetch simulations" });
     }
   });
 

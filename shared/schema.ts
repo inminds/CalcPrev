@@ -6,6 +6,7 @@ import { z } from "zod";
 // Lead - Representa o contato comercial gerado pela calculadora
 export const leads = pgTable("leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cnpj: text("cnpj"),
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
@@ -13,6 +14,7 @@ export const leads = pgTable("leads", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("leads_email_idx").on(table.email),
+  index("leads_cnpj_idx").on(table.cnpj),
 ]);
 
 // CompanySnapshot - Snapshot da empresa no momento da simulação
@@ -35,6 +37,11 @@ export const simulations = pgTable("simulations", {
   leadId: varchar("lead_id").notNull().references(() => leads.id),
   companySnapshotId: varchar("company_snapshot_id").notNull().references(() => companySnapshots.id),
   
+  // Contato de quem fez a simulação
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+
   // Inputs de cálculo
   salarioMinimo: decimal("salario_minimo", { precision: 10, scale: 2 }).notNull(),
   aliquotaFpas: decimal("aliquota_fpas", { precision: 5, scale: 4 }).notNull(),

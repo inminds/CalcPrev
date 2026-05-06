@@ -34,6 +34,7 @@ export interface IStorage {
   // Leads
   createLead(lead: InsertLead): Promise<Lead>;
   getLeadByEmail(email: string): Promise<Lead | undefined>;
+  getLeadByCnpj(cnpj: string): Promise<Lead | undefined>;
   getAllLeads(): Promise<(Lead & { simulationsCount: number })[]>;
 
   // Company Snapshots
@@ -44,6 +45,7 @@ export interface IStorage {
   createSimulation(simulation: InsertSimulation): Promise<Simulation>;
   getSimulation(id: string): Promise<Simulation | undefined>;
   getSimulationsWithDetails(id: string): Promise<{ simulation: Simulation; companySnapshot: CompanySnapshot; lead: Lead } | undefined>;
+  getSimulationsByLeadId(leadId: string): Promise<(Simulation & { companySnapshot: CompanySnapshot })[]>;
   createSimulationWithSnapshot(params: {
     lead: InsertLead | Lead;
     companySnapshot: InsertCompanySnapshot;
@@ -102,11 +104,18 @@ export class DatabaseStorage implements IStorage {
     return lead || undefined;
   }
 
+  async getLeadByCnpj(cnpj: string): Promise<Lead | undefined> {
+    const db = await this.getDb();
+    const [lead] = await db.select().from(leads).where(eq(leads.cnpj, cnpj));
+    return lead || undefined;
+  }
+
   async getAllLeads(): Promise<(Lead & { simulationsCount: number })[]> {
     const db = await this.getDb();
     const result = await db
       .select({
         id: leads.id,
+        cnpj: leads.cnpj,
         name: leads.name,
         email: leads.email,
         phone: leads.phone,
@@ -164,6 +173,17 @@ export class DatabaseStorage implements IStorage {
       companySnapshot: row.company_snapshots,
       lead: row.leads,
     };
+  }
+
+  async getSimulationsByLeadId(leadId: string): Promise<(Simulation & { companySnapshot: CompanySnapshot })[]> {
+    const db = await this.getDb();
+    const result = await db
+      .select()
+      .from(simulations)
+      .innerJoin(companySnapshots, eq(simulations.companySnapshotId, companySnapshots.id))
+      .where(eq(simulations.leadId, leadId))
+      .orderBy(desc(simulations.createdAt));
+    return result.map((row) => ({ ...row.simulations, companySnapshot: row.company_snapshots }));
   }
 
   // Calculation Params
@@ -401,6 +421,7 @@ export class InMemoryStorage implements IStorage {
   async createLead(lead: InsertLead): Promise<Lead> {
     const created: Lead = {
       id: randomUUID(),
+      cnpj: lead.cnpj ?? null,
       name: lead.name,
       email: lead.email,
       phone: lead.phone ?? null,
@@ -413,6 +434,10 @@ export class InMemoryStorage implements IStorage {
 
   async getLeadByEmail(email: string): Promise<Lead | undefined> {
     return this.leadsData.find((l) => l.email === email);
+  }
+
+  async getLeadByCnpj(cnpj: string): Promise<Lead | undefined> {
+    return this.leadsData.find((l) => l.cnpj === cnpj);
   }
 
   async getAllLeads(): Promise<(Lead & { simulationsCount: number })[]> {
@@ -450,6 +475,9 @@ export class InMemoryStorage implements IStorage {
       id: randomUUID(),
       leadId: simulation.leadId,
       companySnapshotId: simulation.companySnapshotId,
+      contactName: simulation.contactName ?? null,
+      contactEmail: simulation.contactEmail ?? null,
+      contactPhone: simulation.contactPhone ?? null,
       salarioMinimo: simulation.salarioMinimo,
       aliquotaFpas: simulation.aliquotaFpas,
       aliquotaRat: simulation.aliquotaRat,
@@ -483,6 +511,16 @@ export class InMemoryStorage implements IStorage {
     if (!companySnapshot || !lead) return undefined;
 
     return { simulation, companySnapshot, lead };
+  }
+
+  async getSimulationsByLeadId(leadId: string): Promise<(Simulation & { companySnapshot: CompanySnapshot })[]> {
+    return this.simulationsData
+      .filter((s) => s.leadId === leadId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map((s) => {
+        const companySnapshot = this.snapshotsData.find((cs) => cs.id === s.companySnapshotId)!;
+        return { ...s, companySnapshot };
+      });
   }
 
   async createSimulationWithSnapshot(params: {
